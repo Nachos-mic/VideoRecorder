@@ -11,14 +11,15 @@ class DeviceCheck : public QObject {
     Q_OBJECT
 public:
     DeviceCheck();
-    QList<QCameraDevice> getDeviceList();\
+    QList<QCameraDevice> getDeviceList();
 
 private:
     QList<QString> tab_id_list;
+    QList<QString> tab_camera_names_list;
 
 signals:
 
-    void deviceListChanged(QList<QString> tab_camera_id_list);
+    void deviceListChanged(QList<QString> tab_camera_id_list , QList<QString> tab_camera_names_list);
 };
 
 #endif // DEVICECHECK_H

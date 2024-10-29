@@ -9,7 +9,7 @@ Window {
     visible: true
 
     property string camera_id : ""
-    property var camera_id_list : [""]
+    property var camera_name_list : []
 
     Rectangle{
         id: options
@@ -23,9 +23,9 @@ Window {
 
         ComboBox {
 
-            model: camera_id_list
+            model: camera_name_list
             width: parent.width/6
-            onCurrentIndexChanged: console.debug(camera_id_list[currentIndex])
+            onCurrentIndexChanged: console.debug(camera_name_list[currentIndex])
         }
     }
 
@@ -51,10 +51,10 @@ Window {
 
         target: cameraUser
 
-        function onDeviceListChanged(id_list){
+        function onDeviceListChanged(id_list , name_list){
             camera_id = id_list[0]
             console.log(camera_id)
-            camera_id_list = id_list;
+            camera_name_list = name_list;
         }
     }
 }

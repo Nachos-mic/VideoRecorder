@@ -13,6 +13,7 @@ DeviceCheck::DeviceCheck() {
 QList<QCameraDevice> DeviceCheck::getDeviceList(){
     QList<QCameraDevice> availableCameras = QMediaDevices::videoInputs();
     tab_id_list.clear();
+    tab_camera_names_list.clear();
 
     if (availableCameras.isEmpty()) {
         qDebug() << "No cameras available";
@@ -20,9 +21,10 @@ QList<QCameraDevice> DeviceCheck::getDeviceList(){
 
     for (const QCameraDevice &cameraDevice : availableCameras) {
         DeviceCheck::tab_id_list.append(cameraDevice.id());
+        DeviceCheck::tab_camera_names_list.append(cameraDevice.description());
     }
 
-    emit deviceListChanged(tab_id_list);
+    emit deviceListChanged(tab_id_list,tab_camera_names_list);
 
     return availableCameras;
 }

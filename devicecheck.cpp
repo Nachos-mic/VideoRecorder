@@ -16,10 +16,6 @@ QList<QCameraDevice> DeviceCheck::getDeviceList(){
 
     if (availableCameras.isEmpty()) {
         qDebug() << "No cameras available";
-    } else {
-        for (const QCameraDevice &cameraDevice : availableCameras) {
-            qDebug() << "Camera Name:" << cameraDevice.description();
-        }
     }
 
     for (const QCameraDevice &cameraDevice : availableCameras) {

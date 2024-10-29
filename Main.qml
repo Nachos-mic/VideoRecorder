@@ -9,6 +9,7 @@ Window {
     visible: true
 
     property string camera_id : ""
+    property var camera_id_list : [""]
 
     Rectangle{
         id: options
@@ -19,6 +20,13 @@ Window {
             left: parent.left
         }
         color: "steelblue"
+
+        ComboBox {
+
+            model: camera_id_list
+            width: parent.width/6
+            onCurrentIndexChanged: console.debug(camera_id_list[currentIndex])
+        }
     }
 
     CaptureSession {
@@ -41,8 +49,12 @@ Window {
 
     Connections{
 
+        target: cameraUser
+
         function onDeviceListChanged(id_list){
             camera_id = id_list[0]
+            console.log(camera_id)
+            camera_id_list = id_list;
         }
     }
 }

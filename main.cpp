@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include "devicecheck.h"
 
 
@@ -10,6 +11,7 @@ int main(int argc, char *argv[])
     DeviceCheck check;
 
     QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("cameraUser", &check);
     const QUrl url(u"qrc:/VideoRecorder_ALPHA/Main.qml"_qs);
     QObject::connect(
         &engine,

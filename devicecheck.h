@@ -11,7 +11,14 @@ class DeviceCheck : public QObject {
     Q_OBJECT
 public:
     DeviceCheck();
-    QList<QCameraDevice> getDeviceList();
+    QList<QCameraDevice> getDeviceList();\
+
+private:
+    QList<QString> tab_id_list;
+
+signals:
+
+    void deviceListChanged(QList<QString> tab_camera_id_list);
 };
 
 #endif // DEVICECHECK_H

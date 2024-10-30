@@ -60,15 +60,15 @@ Window {
     function changeCamera(){
         for (let i = 0; i < camera_id_list.length; ++i) {
             let device = mediaDevices.videoInputs[i]
-            console.log(device.id)
-            console.log(camera_id_list[cameraBox.currentIndex])
+            console.log(device.id + "|||" + camera_id_list[cameraBox.currentIndex])
             if (device.id == camera_id_list[cameraBox.currentIndex]) {
                 camera.cameraDevice = device
-                console.log(device.id)
                 break
             }
         }
     }
+
+
 
     Connections{
 

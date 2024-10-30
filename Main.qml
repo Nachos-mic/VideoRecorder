@@ -55,6 +55,10 @@ Window {
 
     MediaDevices {
         id: mediaDevices
+        onVideoInputsChanged: {
+            console.log("Changed device list")
+            emergencyDeviceChange()
+        }
     }
 
     function changeCamera(){
@@ -68,7 +72,9 @@ Window {
         }
     }
 
-
+    function emergencyDeviceChange(){
+        camera.cameraDevice = mediaDevices.videoInputs[0];
+    }
 
     Connections{
 

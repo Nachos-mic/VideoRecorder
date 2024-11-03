@@ -1,4 +1,4 @@
-#include "showfeed.h"
+#include "camerarecorder.h"
 #include "devicecheck.h"
 
 ShowFeed::ShowFeed() {

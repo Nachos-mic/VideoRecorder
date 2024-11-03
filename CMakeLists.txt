@@ -19,8 +19,10 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     SOURCES
     SOURCES
     SOURCES devicecheck.h devicecheck.cpp
-    SOURCES showfeed.h showfeed.cpp
+    SOURCES camerarecorder.h camerarecorder.cpp
     RESOURCES
+    SOURCES
+    SOURCES imagecapture.h imagecapture.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

@@ -5,6 +5,9 @@
 #include <QImageCapture>
 #include <QMediaCaptureSession>
 #include <QCamera>
+#include <QDateTime>
+#include <QDir>
+#include <QDebug>
 
 class ImageCapture : public QObject {
     Q_OBJECT
@@ -12,19 +15,19 @@ class ImageCapture : public QObject {
 public:
     explicit ImageCapture(QObject *parent = nullptr);
     ~ImageCapture();
-
     void setCamera(QCamera* camera);
-    void captureFrame();
-    QImageCapture* getImageCapture() const { return imageCapture; }
-    QMediaCaptureSession* getCaptureSession() { return &captureSession; }
+    void captureFrame(QCamera* camera);
+    void setCaptureImgPath(QString path);
 
 private:
-    QImageCapture* imageCapture;
-    QMediaCaptureSession captureSession;
     QString generateFileName() const;
+    QMediaCaptureSession captureSession;
+    QImageCapture* imageCapture;
+    QString img_path;
 
 signals:
     void frameCaptured(const QString& path);
+    void setCaptureImgPathChanged(QString path);
 };
 
 #endif // IMAGECAPTURE_H

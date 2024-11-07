@@ -23,6 +23,8 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     RESOURCES
     SOURCES
     SOURCES imagecapture.h imagecapture.cpp
+    QML_FILES PathPopUp.qml
+
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

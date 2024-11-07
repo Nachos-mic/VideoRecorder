@@ -46,29 +46,28 @@ Window {
             text: "Capture frame"
             onClicked: {
                 if (cameraBox.currentIndex >= 0) {
-                    cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
                     cameraUser.captureFrame()
                 }
             }
         }
+
+        Button {
+            id: setPathButton
+            height: parent.height
+            width: parent.width/6
+            anchors {
+                left: screenShotButton.right
+                top: parent.top
+            }
+            text: "Set Path"
+            onClicked: {
+                pathSetPop.open()
+            }
+        }
     }
 
-    CaptureSession {
-        camera: Camera {
-            id: camera
-            Component.onCompleted: start()
-        }
-        videoOutput: videoFeed
-    }
-
-    VideoOutput {
-        id: videoFeed
-        anchors {
-            top: options.bottom
-            left: parent.left
-        }
-        height: parent.height - options.height
-        width: parent.width
+    PathPopUp{
+        id: pathSetPop
     }
 
     MediaDevices {
@@ -79,25 +78,31 @@ Window {
         }
     }
 
+    CaptureSession {
+        id: captureSession
+        camera: cameraUser.camera_device
+        videoOutput: videoOutput
+    }
+
+    VideoOutput {
+        id: videoOutput
+        anchors {
+            top: options.bottom
+            left: parent.left
+        }
+        height: parent.height - options.height
+        width: parent.width
+    }
+
     function changeCamera() {
         if (cameraBox.currentIndex >= 0) {
             cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
-            for (let i = 0; i < camera_id_list.length; ++i) {
-                let device = mediaDevices.videoInputs[i]
-                if (device.id === camera_id_list[cameraBox.currentIndex]) {
-                    camera.cameraDevice = device
-                    break
-                }
-            }
         }
     }
 
     function emergencyDeviceChange() {
-        if (mediaDevices.videoInputs.length > 0) {
-            camera.cameraDevice = mediaDevices.videoInputs[0]
-            if (camera_id_list.length > 0) {
-                cameraUser.createCamera(camera_id_list[0])
-            }
+        if (mediaDevices.videoInputs.length > 0 && camera_id_list.length > 0) {
+            cameraUser.createCamera(camera_id_list[0])
         }
     }
 
@@ -110,17 +115,17 @@ Window {
                 changeCamera()
             }
         }
-
         function onFrameCaptured(path) {
             console.log("Frame captured:", path)
+        }
+        function onSetCaptureImgPathChanged(path){
+            console.log("Path changed to:", path)
         }
     }
 
     Component.onCompleted: {
-        if (mediaDevices.videoInputs.length > 0) {
-            camera.cameraDevice = mediaDevices.videoInputs[0]
-            camera.start()
+        if (mediaDevices.videoInputs.length > 0 && camera_id_list.length > 0) {
+            cameraUser.createCamera(camera_id_list[0])
         }
     }
 }
-

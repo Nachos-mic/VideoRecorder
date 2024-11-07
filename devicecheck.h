@@ -22,12 +22,14 @@ public:
 
     Q_INVOKABLE void createCamera(const QString& deviceId);
     Q_INVOKABLE void captureFrame();
+    Q_INVOKABLE void setPath(QString path);
 
 private:
     QList<QString> tab_id_list;
     QList<QString> tab_camera_names_list;
     QCamera* camera_device;
     ImageCapture* imageCaptureManager;
+    int camera_list_size = 0;
 
 signals:
     void deviceListChanged(QList<QString> tab_camera_id_list, QList<QString> tab_camera_names_list);

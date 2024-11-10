@@ -18,12 +18,13 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     QML_FILES Main.qml
     SOURCES
     SOURCES
-    SOURCES devicecheck.h devicecheck.cpp
+    SOURCES videorecorder.h videorecorder.cpp
     SOURCES camerarecorder.h camerarecorder.cpp
     RESOURCES
     SOURCES
     SOURCES imagecapture.h imagecapture.cpp
     QML_FILES PathPopUp.qml
+    SOURCES videocapture.h videocapture.cpp
 
 )
 

@@ -1,5 +1,5 @@
 #include "camerarecorder.h"
-#include "devicecheck.h"
+#include "videorecorder.h"
 
 ShowFeed::ShowFeed() {
 

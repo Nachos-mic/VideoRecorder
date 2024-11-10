@@ -1,26 +1,20 @@
-#include "devicecheck.h"
+#include "videorecorder.h"
 #include <QMediaDevices>
 
-DeviceCheck::DeviceCheck()
-    : camera_device(nullptr)
-    , imageCaptureManager(new ImageCapture(this))
+VideoRecorder::VideoRecorder(QObject *parent)
+    : QObject(parent)
+    , camera_device(nullptr)
 {
     QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &DeviceCheck::getDeviceList);
+    connect(timer, &QTimer::timeout, this, &VideoRecorder::getDeviceList);
     timer->start(500);
-
-    connect(imageCaptureManager, &ImageCapture::frameCaptured,
-            this, &DeviceCheck::frameCaptured);
-
-    connect(imageCaptureManager, &ImageCapture::setCaptureImgPathChanged,
-            this, &DeviceCheck::setPath);
 }
 
-DeviceCheck::~DeviceCheck() {
+VideoRecorder::~VideoRecorder(){
     delete camera_device;
 }
 
-QList<QCameraDevice> DeviceCheck::getDeviceList() {
+QList<QCameraDevice> VideoRecorder::getDeviceList() {
     QList<QCameraDevice> availableCameras = QMediaDevices::videoInputs();
     tab_id_list.clear();
     tab_camera_names_list.clear();
@@ -30,7 +24,8 @@ QList<QCameraDevice> DeviceCheck::getDeviceList() {
     }
 
     for (const QCameraDevice &cameraDevice : availableCameras) {
-        tab_id_list.append(cameraDevice.id());
+        QString cameraId = QString::fromUtf8(cameraDevice.id());
+        tab_id_list.append(cameraId);
         tab_camera_names_list.append(cameraDevice.description());
     }
 
@@ -38,15 +33,16 @@ QList<QCameraDevice> DeviceCheck::getDeviceList() {
         camera_list_size = availableCameras.size();
         emit deviceListChanged(tab_id_list, tab_camera_names_list);
     }
+
     return availableCameras;
 }
 
-QCamera* DeviceCheck::getCamera() {
+QCamera* VideoRecorder::getCamera() {
     qDebug() << "GET";
     return camera_device;
 }
 
-void DeviceCheck::setCamera(QCamera* camera) {
+void VideoRecorder::setCamera(QCamera* camera) {
     qDebug() << "SET";
     if (camera_device != camera) {
         delete camera_device;
@@ -54,13 +50,13 @@ void DeviceCheck::setCamera(QCamera* camera) {
         if (camera_device) {
             imageCaptureManager->setCamera(camera_device);
             camera_device->start();
-            qDebug() << "Camera set and started";
+            qDebug() << "Camera started";
         }
         emit cameraChanged();
     }
 }
 
-void DeviceCheck::createCamera(const QString& deviceId) {
+void VideoRecorder::createCamera(const QString& deviceId) {
     const QList<QCameraDevice> cameras = QMediaDevices::videoInputs();
     for (const QCameraDevice& device : cameras) {
         if (device.id() == deviceId) {
@@ -72,9 +68,9 @@ void DeviceCheck::createCamera(const QString& deviceId) {
     qDebug() << "Failed to find camera with ID:" << deviceId;
 }
 
-void DeviceCheck::captureFrame() {
+void VideoRecorder::captureFrame() {
     if (!camera_device) {
-        qDebug() << "No camera device available";
+        qDebug() << "No camera available";
         return;
     }
 
@@ -83,24 +79,24 @@ void DeviceCheck::captureFrame() {
         camera_device->start();
         QTimer::singleShot(1500, this, [this]() {
             if (camera_device && camera_device->isActive()) {
-                qDebug() << "Camera is now active, capturing frame";
+                qDebug() << "Capturing Frame";
                 imageCaptureManager->captureFrame(camera_device);
             } else {
-                qDebug() << "Camera failed to become active";
+                qDebug() << "Camera failed to activate";
             }
         });
     } else {
-        qDebug() << "Camera is active, capturing frame";
+        qDebug() << "Capturing Frame";
         imageCaptureManager->captureFrame(camera_device);
     }
 }
 
-void DeviceCheck::setPath(QString path) {
+void VideoRecorder::setPath(QString path) {
     if (imageCaptureManager) {
         imageCaptureManager->setCaptureImgPath(path);
-        qDebug() << "Path set in DeviceCheck:" << path;
+        qDebug() << "Set Path:" << path;
     } else {
-        qDebug() << "ImageCaptureManager is not initialized";
+        qDebug() << "ImageCaptureManager isn't initialized";
     }
 }
 

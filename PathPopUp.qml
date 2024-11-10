@@ -9,9 +9,13 @@ Popup {
         x: parent.width/2
         y: parent.height/2
         width: 200
-        height: 300
+        height: 100
         modal: true
         focus: true
+
+        anchors{
+            centerIn: parent
+        }
 
         TextField{
             id:pathField
@@ -39,6 +43,8 @@ Popup {
             anchors {
                 top: setButton.bottom
                 topMargin: 20
+                left: setButton.right
+                leftMargin: 30
                 horizontalCenter: parent.horizontalPadding
             }
         }

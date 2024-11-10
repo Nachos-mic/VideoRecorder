@@ -1,5 +1,5 @@
-#ifndef IMAGECAPTURE_H
-#define IMAGECAPTURE_H
+#ifndef VIDEOCAPTURE_H
+#define VIDEOCAPTURE_H
 
 #include <QObject>
 #include <QImageCapture>
@@ -8,30 +8,26 @@
 #include <QDateTime>
 #include <QDir>
 #include <QDebug>
-#include <QtCore>
 
-
-class ImageCapture : public QObject {
+class VideoCapture : public QObject {
     Q_OBJECT
-
 public:
-    explicit ImageCapture(QObject *parent = nullptr);
-    ~ImageCapture();
-    void setCamera(QCamera* camera);
+    explicit VideoCapture(QObject *parent = nullptr);
+    ~VideoCapture();
 
-public slots:
-    void captureFrame(QCamera* camera);
-    void setCaptureImgPath(QString path);
+    void setCamera(QCamera* camera);
+    void captureVideo(QCamera* camera);
+    void setCaptureVideoPath(QString path);
 
 private:
     QString generateFileName() const;
     QMediaCaptureSession captureSession;
     QImageCapture* imageCapture;
-    QString img_path;
+    QString vid_path;
 
 signals:
     void frameCaptured(const QString& path);
     void setCaptureImgPathChanged(QString path);
 };
 
-#endif // IMAGECAPTURE_H
+#endif // VIDEOCAPTURE_H

@@ -8,7 +8,7 @@ ImageCapture::ImageCapture(QObject *parent)
 {
     connect(imageCapture, &QImageCapture::imageSaved,
             this, [this](int id, const QString& path) {
-                qDebug() << "Image saved successfully at:" << path;
+                qDebug() << "Image saved at:" << path;
                 emit frameCaptured(path);
             });
 
@@ -25,7 +25,7 @@ void ImageCapture::setCamera(QCamera* camera) {
     if (camera) {
         captureSession.setCamera(camera);
         captureSession.setImageCapture(imageCapture);
-        qDebug() << "Camera and image capture set in capture session";
+        qDebug() << "CaptureSession active";
     }
 }
 
@@ -43,17 +43,17 @@ void ImageCapture::captureFrame(QCamera* camera) {
     captureSession.setImageCapture(imageCapture);
 
     if (!imageCapture) {
-        qDebug() << "Image capture not initialized";
+        qDebug() << "Img Capture not active";
         return;
     }
 
     if (!imageCapture->isReadyForCapture()) {
-        qDebug() << "Image capture not ready";
+        qDebug() << "Img Capture not readu";
         return;
     }
 
     QString filename = generateFileName();
-    qDebug() << "Attempting to capture to:" << filename;
+    qDebug() << "Attempting to capture frame:" << filename;
     imageCapture->captureToFile(filename);
 
     camera->stop();
@@ -66,6 +66,6 @@ void ImageCapture::setCaptureImgPath(QString path) {
         img_path = path;
         QDir().mkpath(path);
         emit setCaptureImgPathChanged(path);
-        qDebug() << "Capture path set to:" << path;
+        qDebug() << "Path Set:" << path;
     }
 }

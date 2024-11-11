@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Window
 import QtMultimedia
 import QtQuick.Controls
+import QtQuick.Dialogs
+import QtQuick.Layouts
 
 Window {
     width: 640
@@ -76,6 +78,27 @@ Window {
             }
         }
 
+        FolderDialog {
+            id: folderDialog
+            title: "Select Directory"
+
+            currentFolder: imageCapture.imgPath ?
+                               imageCapture.imgPath.replace(/\\/g, '/') :
+                               StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
+
+            options: FolderDialog.ShowDirsOnly | FolderDialog.DontResolveSymlinks
+
+            onAccepted: {
+                cameraUser.setPath(selectedFolder)
+            }
+
+            onRejected: {
+                console.log("Folder selection canceled")
+            }
+        }
+
+
+
         Button {
             id: setPathButton
             height: parent.height
@@ -86,7 +109,7 @@ Window {
             }
             text: "Set Path"
             onClicked: {
-                pathSetPop.open()
+                folderDialog.open()
             }
         }
     }

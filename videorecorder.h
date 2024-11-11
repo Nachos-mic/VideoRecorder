@@ -33,7 +33,7 @@ private:
 public slots:
     void createCamera(const QString& deviceId);
     void captureFrame();
-    void setPath(QString path);
+    void setPath(const QString& path);
 
 signals:
     void deviceListChanged(QList<QString> ids, QStringList names);

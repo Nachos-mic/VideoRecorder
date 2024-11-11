@@ -9,6 +9,8 @@
 #include <QDir>
 #include <QDebug>
 #include <QtCore>
+#include <QFileDialog>
+#include <QUrl>
 
 
 class ImageCapture : public QObject {

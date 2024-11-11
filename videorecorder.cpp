@@ -91,10 +91,9 @@ void VideoRecorder::captureFrame() {
     }
 }
 
-void VideoRecorder::setPath(QString path) {
+void VideoRecorder::setPath(const QString& path) {
     if (imageCaptureManager) {
         imageCaptureManager->setCaptureImgPath(path);
-        qDebug() << "Set Path:" << path;
     } else {
         qDebug() << "ImageCaptureManager isn't initialized";
     }

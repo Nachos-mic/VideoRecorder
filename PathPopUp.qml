@@ -25,7 +25,8 @@ Popup {
         Button{
             id:setButton
             onClicked:{
-                cameraUser.setPath(pathField.text)
+                //cameraUser.setPath(pathField.text)
+                cameraUser.setPath()
                 pathSetPop.close()
             }
             text:"Set Path"

@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
+
     qmlRegisterUncreatableType<QCamera>("CustomComponents", 1, 0, "Camera", "Camera cannot be created in QML");
 
 
@@ -20,6 +21,7 @@ int main(int argc, char *argv[])
 
     ImageCapture* imageCaptureManager = new ImageCapture(&engine);
     camera_app->imageCaptureManager = imageCaptureManager;
+
 
     QObject::connect(camera_app, &VideoRecorder::frameCapture,imageCaptureManager, &ImageCapture::captureFrame);
     QObject::connect(camera_app, &VideoRecorder::pathChanged,imageCaptureManager, &ImageCapture::setCaptureImgPath);

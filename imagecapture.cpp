@@ -62,6 +62,9 @@ void ImageCapture::captureFrame(QCamera* camera) {
 }
 
 void ImageCapture::setCaptureImgPath(QString path) {
+
+    path = QUrl(path).toLocalFile();
+
     if (img_path != path) {
         img_path = path;
         QDir().mkpath(path);

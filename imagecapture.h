@@ -11,6 +11,7 @@
 #include <QtCore>
 #include <QFileDialog>
 #include <QUrl>
+#include "utils.h"
 
 
 class ImageCapture : public QObject {
@@ -29,7 +30,6 @@ private:
     QString generateFileName() const;
     QMediaCaptureSession captureSession;
     QImageCapture* imageCapture;
-    QString img_path;
 
 signals:
     void frameCaptured(const QString& path);

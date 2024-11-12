@@ -3,7 +3,6 @@
 ImageCapture::ImageCapture(QObject *parent)
     : QObject(parent)
     , imageCapture(new QImageCapture(this))
-    , img_path(QDir::currentPath() + "/captures")
 {
     connect(imageCapture, &QImageCapture::imageSaved,
             this, [this](int id, const QString& path) {
@@ -29,7 +28,7 @@ void ImageCapture::setCamera(QCamera* camera) {
 }
 
 QString ImageCapture::generateFileName() const {
-    QString path = img_path;
+    QString path = Utils::getMediaPath();
     QDir().mkpath(path);
     return path + "/screenshot_" +
            QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") +
@@ -62,8 +61,8 @@ void ImageCapture::setCaptureImgPath(QString path) {
 
     path = QUrl(path).toLocalFile();
 
-    if (img_path != path) {
-        img_path = path;
+    if (Utils::getMediaPath() != path) {
+        Utils::setMediaPath(path);
         QDir().mkpath(path);
         emit setCaptureImgPathChanged(path);
         qDebug() << "Path Set:" << path;

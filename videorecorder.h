@@ -40,5 +40,6 @@ signals:
     void cameraChanged();
     void frameCapture(QCamera* camera);
     void pathChanged(QString path);
+    void frameCaptured(QString path);
 };
 #endif // VIDEORECORDER_H

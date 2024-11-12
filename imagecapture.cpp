@@ -1,5 +1,4 @@
 #include "imagecapture.h"
-#include "qthread.h"
 
 ImageCapture::ImageCapture(QObject *parent)
     : QObject(parent)
@@ -38,27 +37,25 @@ QString ImageCapture::generateFileName() const {
 }
 
 void ImageCapture::captureFrame(QCamera* camera) {
+    if (!camera || !imageCapture) {
+        qDebug() << "Camera or ImageCapture not available";
+        return;
+    }
 
     captureSession.setCamera(camera);
     captureSession.setImageCapture(imageCapture);
 
-    if (!imageCapture) {
-        qDebug() << "Img Capture not active";
-        return;
-    }
-
     if (!imageCapture->isReadyForCapture()) {
-        qDebug() << "Img Capture not readu";
+        qDebug() << "ImageCapture is not ready for capture";
         return;
     }
 
     QString filename = generateFileName();
-    qDebug() << "Attempting to capture frame:" << filename;
+    qDebug() << "Capturing frame to file:" << filename;
+
     imageCapture->captureToFile(filename);
 
-    camera->stop();
-    QThread::msleep(100);
-    camera->start();
+
 }
 
 void ImageCapture::setCaptureImgPath(QString path) {

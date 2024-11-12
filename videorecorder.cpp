@@ -88,6 +88,7 @@ void VideoRecorder::captureFrame() {
     } else {
         qDebug() << "Capturing Frame";
         imageCaptureManager->captureFrame(camera_device);
+        emit frameCaptured("XD");
     }
 }
 

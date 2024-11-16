@@ -4,10 +4,13 @@
 #include <QObject>
 #include <QImageCapture>
 #include <QMediaCaptureSession>
+#include <QMediaRecorder>
 #include <QCamera>
 #include <QDateTime>
 #include <QDir>
 #include <QDebug>
+#include <QUrl>
+#include "utils.h"
 
 class VideoCapture : public QObject {
     Q_OBJECT
@@ -16,18 +19,20 @@ public:
     ~VideoCapture();
 
     void setCamera(QCamera* camera);
-    void captureVideo(QCamera* camera);
-    void setCaptureVideoPath(QString path);
+
+public slots:
+    void startCapturingVideo(QCamera* camera);
+    void stopCapturingVideo();
+    bool isRecording();
 
 private:
     QString generateFileName() const;
     QMediaCaptureSession captureSession;
-    QImageCapture* imageCapture;
-    QString vid_path;
+    QMediaRecorder* videoCapture;
+    QString vid_path = Utils::getMediaPath();
 
 signals:
-    void frameCaptured(const QString& path);
-    void setCaptureImgPathChanged(QString path);
+    void videoCaptured(const QString& path);
 };
 
 #endif // VIDEOCAPTURE_H

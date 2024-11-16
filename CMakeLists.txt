@@ -26,6 +26,7 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     QML_FILES PathPopUp.qml
     SOURCES videocapture.h videocapture.cpp
     SOURCES utils.h utils.cpp
+    SOURCES
 
 )
 

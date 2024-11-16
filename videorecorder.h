@@ -9,7 +9,7 @@
 #include <QMediaRecorder>
 #include <QtCore>
 #include "imagecapture.h"
-//#include "videocapture.h"
+#include "videocapture.h"
 
 class VideoRecorder : public QObject {
     Q_OBJECT
@@ -19,10 +19,10 @@ public:
     explicit VideoRecorder(QObject *parent = nullptr);
     ~VideoRecorder();
     ImageCapture* imageCaptureManager;
+    VideoCapture* videoCaptureManager;
     QList<QCameraDevice> getDeviceList();
     QCamera* getCamera();
     void setCamera(QCamera* camera);
-    // Q_INVOKABLE void createCamera(const QString& deviceId);
     QList<QString> tab_id_list;
     QStringList tab_camera_names_list;
 
@@ -33,6 +33,8 @@ private:
 public slots:
     void createCamera(const QString& deviceId);
     void captureFrame();
+    void startCapturingVideo();
+    void stopCapturingVideo();
     void setPath(const QString& path);
 
 signals:
@@ -41,5 +43,6 @@ signals:
     void frameCapture(QCamera* camera);
     void pathChanged(QString path);
     void frameCaptured(QString path);
+    void videoCaptured(QString path);
 };
 #endif // VIDEORECORDER_H

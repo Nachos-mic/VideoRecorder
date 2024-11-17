@@ -2,24 +2,122 @@
 
 VideoCapture::VideoCapture(QObject *parent)
     : QObject(parent)
+    , activeSession(nullptr)
     , videoCapture(new QMediaRecorder(this))
+    , audioInput(nullptr)
+    , currentCamera(nullptr)
 {
+    connect(videoCapture, &QMediaRecorder::errorOccurred,
+            this, [this](QMediaRecorder::Error error, const QString &errorString) {
+                qDebug() << "Recording error:" << error << errorString;
+                emit recordingError(errorString);
+            });
 
+    connect(videoCapture, &QMediaRecorder::recorderStateChanged,
+            this, [this](QMediaRecorder::RecorderState state) {
+                qDebug() << "Recorder state changed to:" << state;
+                if (state == QMediaRecorder::StoppedState && currentCamera) {
+                    // Restore camera state after recording
+                    setupCameraForPreview();
+                }
+            });
 }
 
-VideoCapture::~VideoCapture() {
+VideoCapture::~VideoCapture()
+{
+    if (videoCapture->recorderState() == QMediaRecorder::RecordingState) {
+        videoCapture->stop();
+    }
+    delete audioInput;
 }
 
+void VideoCapture::setupCameraForPreview()
+{
+    if (!currentCamera || !activeSession) return;
 
+    currentCamera->stop();
+    activeSession->setCamera(currentCamera);
+    activeSession->setRecorder(nullptr);
+    currentCamera->start();
+    qDebug() << "Camera setup for preview";
+}
 
+void VideoCapture::setupCameraForRecording()
+{
+    if (!currentCamera || !activeSession) return;
 
-void VideoCapture::setCamera(QCamera* camera) {
-    if (camera) {
-        captureSession.setCamera(camera);
-        captureSession.setRecorder(videoCapture);
-        qDebug() << "CaptureSession active";
+    currentCamera->stop();
+    activeSession->setRecorder(videoCapture);
+
+    if (!audioInput) {
+        auto audioInputs = QMediaDevices::audioInputs();
+        if (!audioInputs.isEmpty()) {
+            audioInput = new QAudioInput(this);
+            audioInput->setDevice(audioInputs.first());
+            activeSession->setAudioInput(audioInput);
+        }
+    }
+
+    currentCamera->start();
+    qDebug() << "Camera setup for recording";
+}
+
+void VideoCapture::setActiveSession(QMediaCaptureSession* session)
+{
+    activeSession = session;
+}
+
+void VideoCapture::setCamera(QCamera* camera)
+{
+    currentCamera = camera;
+    if (camera && activeSession) {
+        setupCameraForPreview();
     }
 }
+
+void VideoCapture::startCapturingVideo(QCamera* camera)
+{
+    if (!camera || videoCapture->recorderState() == QMediaRecorder::RecordingState) {
+        qDebug() << "Cannot start recording: "
+                 << (!camera ? "No camera" : "Already recording");
+        return;
+    }
+
+    currentCamera = camera;
+    setupCameraForRecording();
+
+    QMediaFormat format;
+    format.setVideoCodec(QMediaFormat::VideoCodec::H264);
+    format.setAudioCodec(QMediaFormat::AudioCodec::AAC);
+
+
+
+    videoCapture->setQuality(QMediaRecorder::Quality::NormalQuality);
+
+    QString outputFile = generateFileName();
+    qDebug() << "Setting output location to:" << outputFile;
+
+    videoCapture->record();
+    qDebug() << "Started recording to:" << videoCapture->outputLocation().toLocalFile();
+}
+
+void VideoCapture::stopCapturingVideo()
+{
+    if (videoCapture->recorderState() == QMediaRecorder::RecordingState) {
+        videoCapture->stop();
+        QString recordedFile = videoCapture->outputLocation().toLocalFile();
+        qDebug() << "Stopped recording. File saved as:" << recordedFile;
+        setupCameraForPreview();
+        emit videoCaptured(recordedFile);
+    }
+}
+
+bool VideoCapture::isRecording() const
+{
+    return videoCapture->recorderState() == QMediaRecorder::RecordingState;
+}
+
+
 
 QString VideoCapture::generateFileName() const {
     QString path = Utils::getMediaPath();
@@ -29,35 +127,6 @@ QString VideoCapture::generateFileName() const {
            ".mp4";
 }
 
-void VideoCapture::startCapturingVideo(QCamera* camera) {
-    if (!camera || !videoCapture) {
-        qDebug() << "Camera or VideoCapture not available";
-        return;
-    }
-
-    captureSession.setCamera(camera);
-    captureSession.setRecorder(videoCapture);
 
 
-    videoCapture->setQuality(QMediaRecorder::HighQuality);
-    videoCapture->setOutputLocation(QUrl::fromLocalFile(generateFileName()));
-
-    videoCapture->record();
-    qDebug() << "Recording video to:" << videoCapture->outputLocation().toLocalFile();
-
-}
-
-void VideoCapture::stopCapturingVideo()
-{
-    if (videoCapture && videoCapture->recorderState() == QMediaRecorder::RecordingState) {
-        videoCapture->stop();
-        qDebug() << "Stopped recording. File saved to:" << vid_path;
-    }
-}
-
-bool VideoCapture::isRecording() const
-{
-    return videoCapture && videoCapture->recorderState() == QMediaRecorder::RecordingState;
-}
-Impr
 

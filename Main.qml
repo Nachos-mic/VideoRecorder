@@ -63,17 +63,10 @@ Window {
                 left: screenShotButton.right
                 top: parent.top
             }
-            text: "Capture a Video"
+            text: video_status ? "Stop Recording" : "Start Recording"
             onClicked: {
-                if (cameraBox.currentIndex >= 0 && video_status === false) {
-                    //cameraUser.captureVideo()
-                    border_video_status = "red"
-                    video_status = true
-                }
-                else if(video_status === true){
-                    //camera.User.saveVideo()
-                    border_video_status = "black"
-                    video_status = false
+                if (cameraBox.currentIndex >= 0) {
+                    cameraUser.startStopVideoRecording()
                 }
             }
         }
@@ -157,17 +150,9 @@ Window {
     function changeCamera() {
         if (cameraBox.currentIndex >= 0) {
             cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
-            console.log(camera_id_list[0])
             console.log("changeCamera|||" + camera_id_list[cameraBox.currentIndex])
         }
     }
-
-    // function emergencyDeviceChange() {
-    //     if (mediaDevices.videoInputs.length > 0 && camera_id_list.length > 0) {
-    //         cameraUser.createCamera(camera_id_list[0])
-    //         console.log("emergencyDeviceChange|||")
-    //     }
-    // }
 
     Connections {
         target: cameraUser
@@ -189,6 +174,18 @@ Window {
         function onPathChanged(path){
             console.log("Path changed to:", path)
         }
+        function onCameraChanged() {
+                console.log("Camera changed")
+        }
+        function onVideoCaptured(path) {
+                console.log("Video saved to:", path)
+                video_status = false
+                border_video_status = "black"
+        }
+        function onVideoRecordingStatusChanged(isRecording) {
+                video_status = isRecording
+                border_video_status = isRecording ? "red" : "black"
+            }
     }
 
     Component.onCompleted: {

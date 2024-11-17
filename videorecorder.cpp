@@ -4,37 +4,35 @@
 VideoRecorder::VideoRecorder(QObject *parent)
     : QObject(parent)
     , camera_device(nullptr)
+    , captureSession(new QMediaCaptureSession(this))
+    , videoCaptureManager(new VideoCapture(this))
 {
+    videoCaptureManager->setActiveSession(captureSession);
+
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VideoRecorder::getDeviceList);
     timer->start(500);
 }
 
-VideoRecorder::~VideoRecorder(){
+VideoRecorder::~VideoRecorder() {
     delete camera_device;
 }
 
-QList<QCameraDevice> VideoRecorder::getDeviceList() {
-    QList<QCameraDevice> availableCameras = QMediaDevices::videoInputs();
-    tab_id_list.clear();
-    tab_camera_names_list.clear();
-
-    if (availableCameras.isEmpty()) {
-        qDebug() << "No cameras available";
+void VideoRecorder::setCamera(QCamera* camera)
+{
+    if (this->camera_device != camera) {
+        if (this->camera_device) {
+            this->camera_device->stop();
+        }
+        this->camera_device = camera;
+        if (camera) {
+            captureSession->setCamera(camera);
+            imageCaptureManager->setCamera(camera);
+            camera->start();
+            qDebug() << "Camera started";
+        }
+        emit cameraChanged();
     }
-
-    for (const QCameraDevice &cameraDevice : availableCameras) {
-        QString cameraId = QString::fromUtf8(cameraDevice.id());
-        tab_id_list.append(cameraId);
-        tab_camera_names_list.append(cameraDevice.description());
-    }
-
-    if(camera_list_size != availableCameras.size()){
-        camera_list_size = availableCameras.size();
-        emit deviceListChanged(tab_id_list, tab_camera_names_list);
-    }
-
-    return availableCameras;
 }
 
 QCamera* VideoRecorder::getCamera() {
@@ -42,18 +40,25 @@ QCamera* VideoRecorder::getCamera() {
     return camera_device;
 }
 
-void VideoRecorder::setCamera(QCamera* camera) {
-    qDebug() << "SET";
-    if (camera_device != camera) {
-        delete camera_device;
-        camera_device = camera;
-        if (camera_device) {
-            imageCaptureManager->setCamera(camera_device);
-            camera_device->start();
-            qDebug() << "Camera started";
-        }
-        emit cameraChanged();
+void VideoRecorder::startStopVideoRecording()
+{
+    if (!camera_device) {
+        qDebug() << "No camera available";
+        return;
     }
+
+    if (videoCaptureManager->isRecording()) {
+        videoCaptureManager->stopCapturingVideo();
+        emit videoRecordingStatusChanged(false);
+    } else {
+        videoCaptureManager->startCapturingVideo(camera_device);
+        emit videoRecordingStatusChanged(true);
+    }
+}
+
+QMediaCaptureSession* VideoRecorder::getCaptureSession()
+{
+    return captureSession;
 }
 
 void VideoRecorder::createCamera(const QString& deviceId) {
@@ -92,11 +97,37 @@ void VideoRecorder::captureFrame() {
     }
 }
 
+
 void VideoRecorder::setPath(const QString& path) {
     if (imageCaptureManager) {
         imageCaptureManager->setCaptureImgPath(path);
     } else {
         qDebug() << "ImageCaptureManager isn't initialized";
     }
+}
+
+
+
+QList<QCameraDevice> VideoRecorder::getDeviceList() {
+    QList<QCameraDevice> availableCameras = QMediaDevices::videoInputs();
+    tab_id_list.clear();
+    tab_camera_names_list.clear();
+
+    if (availableCameras.isEmpty()) {
+        qDebug() << "No cameras available";
+    }
+
+    for (const QCameraDevice &cameraDevice : availableCameras) {
+        QString cameraId = QString::fromUtf8(cameraDevice.id());
+        tab_id_list.append(cameraId);
+        tab_camera_names_list.append(cameraDevice.description());
+    }
+
+    if(camera_list_size != availableCameras.size()){
+        camera_list_size = availableCameras.size();
+        emit deviceListChanged(tab_id_list, tab_camera_names_list);
+    }
+
+    return availableCameras;
 }
 

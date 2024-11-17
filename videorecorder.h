@@ -34,6 +34,7 @@ private:
     QMediaCaptureSession* captureSession;
     int camera_list_size = 0;
     VideoCapture* videoCaptureManager;
+    QString current_id;
 
 public slots:
     void captureFrame();
@@ -44,7 +45,7 @@ signals:
     void cameraChanged();
     void frameCapture(QCamera* camera);
     void pathChanged(QString path);
-    void frameCaptured(QString path);
+    void frameCaptured();
     void videoCaptured(QString path);
     void videoRecordingStatusChanged(bool isRecording);
 };

@@ -21,10 +21,38 @@ ImageCapture::~ImageCapture() {
 
 void ImageCapture::setCamera(QCamera* camera) {
     if (camera) {
+        // Store the camera pointer
+        currentCamera = camera;
+
+        // Configure capture session
         captureSession.setCamera(camera);
         captureSession.setImageCapture(imageCapture);
-        qDebug() << "CaptureSession active";
+        qDebug() << "ImageCapture: CaptureSession configured";
     }
+}
+
+void ImageCapture::captureFrame(QCamera* camera) {
+    if (!camera || !imageCapture) {
+        qDebug() << "Camera or ImageCapture not available";
+        return;
+    }
+
+    // Ensure we're using the latest camera
+    currentCamera = camera;
+    captureSession.setCamera(camera);
+    captureSession.setImageCapture(imageCapture);
+
+    // Wait a bit to ensure everything is set up
+    QTimer::singleShot(100, this, [this]() {
+        if (!imageCapture->isReadyForCapture()) {
+            qDebug() << "ImageCapture is not ready for capture";
+            return;
+        }
+
+        QString filename = generateFileName();
+        qDebug() << "Capturing frame to file:" << filename;
+        imageCapture->captureToFile(filename);
+    });
 }
 
 QString ImageCapture::generateFileName() const {
@@ -35,30 +63,7 @@ QString ImageCapture::generateFileName() const {
            ".jpg";
 }
 
-void ImageCapture::captureFrame(QCamera* camera) {
-    if (!camera || !imageCapture) {
-        qDebug() << "Camera or ImageCapture not available";
-        return;
-    }
-
-    captureSession.setCamera(camera);
-    captureSession.setImageCapture(imageCapture);
-
-    if (!imageCapture->isReadyForCapture()) {
-        qDebug() << "ImageCapture is not ready for capture";
-        return;
-    }
-
-    QString filename = generateFileName();
-    qDebug() << "Capturing frame to file:" << filename;
-
-    imageCapture->captureToFile(filename);
-
-
-}
-
 void ImageCapture::setCaptureImgPath(QString path) {
-
     path = QUrl(path).toLocalFile();
 
     if (Utils::getMediaPath() != path) {

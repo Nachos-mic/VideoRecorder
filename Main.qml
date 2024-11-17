@@ -167,9 +167,9 @@ Window {
                 changeCamera()
             }
         }
-        function onFrameCaptured(path) {
-            console.log("Frame captured:", path)
-            cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
+        function onFrameCaptured() {
+            console.log("Frame captured")
+            changeCamera()
         }
         function onPathChanged(path){
             console.log("Path changed to:", path)

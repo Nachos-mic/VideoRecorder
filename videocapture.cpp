@@ -66,13 +66,11 @@ bool VideoCapture::setupCameraForRecording()
     QString filePath = generateFileName() + ".mp4";
     videoCapture->setOutputLocation(QUrl::fromLocalFile(filePath));
 
-    // Verify the camera is active
     if (!currentCamera->isActive()) {
         currentCamera->start();
         QThread::msleep(100);
     }
 
-    // Setup audio
     if (!audioInput) {
         audioInput = activeSession->audioInput();
         if (!audioInput) {

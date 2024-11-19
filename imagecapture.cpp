@@ -21,10 +21,8 @@ ImageCapture::~ImageCapture() {
 
 void ImageCapture::setCamera(QCamera* camera) {
     if (camera) {
-        // Store the camera pointer
         currentCamera = camera;
 
-        // Configure capture session
         captureSession.setCamera(camera);
         captureSession.setImageCapture(imageCapture);
         qDebug() << "ImageCapture: CaptureSession configured";
@@ -37,12 +35,10 @@ void ImageCapture::captureFrame(QCamera* camera) {
         return;
     }
 
-    // Ensure we're using the latest camera
     currentCamera = camera;
     captureSession.setCamera(camera);
     captureSession.setImageCapture(imageCapture);
 
-    // Wait a bit to ensure everything is set up
     QTimer::singleShot(100, this, [this]() {
         if (!imageCapture->isReadyForCapture()) {
             qDebug() << "ImageCapture is not ready for capture";

@@ -12,7 +12,7 @@
 class VideoRecorder : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QCamera* camera READ getCamera NOTIFY cameraChanged)
+    Q_PROPERTY(QCamera* camera_device WRITE setCamera READ getCamera NOTIFY cameraChanged)
     Q_PROPERTY(QMediaCaptureSession* captureSession READ getCaptureSession NOTIFY captureSessionChanged)
 
 public:
@@ -47,6 +47,7 @@ private:
 
     QCamera* camera_device;
     QMediaCaptureSession* captureSession;
+    QString camera_device_id;
     QString current_id;
     int camera_list_size;
     QVariantList tab_id_list;

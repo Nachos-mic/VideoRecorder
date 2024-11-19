@@ -17,10 +17,6 @@ Window {
     property var cameraList: []
     title: "VideoRecorder"
 
-    // Add state properties to track camera status
-    property bool isCameraInitialized: false
-    property bool isCameraReady: false
-
     Rectangle {
         id: options
         height: 40
@@ -41,7 +37,7 @@ Window {
                 top: parent.top
             }
             onCurrentIndexChanged: {
-                if (currentIndex >= 0 && isCameraInitialized) {
+                if (currentIndex >= 0) {
                     changeCamera()
                 }
             }
@@ -56,7 +52,6 @@ Window {
                 top: parent.top
             }
             text: "Capture frame"
-            enabled: isCameraReady
             onClicked: {
                 if (cameraBox.currentIndex >= 0) {
                     cameraUser.captureFrame()
@@ -73,7 +68,6 @@ Window {
                 top: parent.top
             }
             text: video_status ? "Stop Recording" : "Start Recording"
-            enabled: isCameraReady
             onClicked: {
                 if (cameraBox.currentIndex >= 0) {
                     cameraUser.startStopVideoRecording()
@@ -121,39 +115,10 @@ Window {
 
         onActiveChanged: {
             console.log("Camera active state changed:", active)
-            if (active) {
-                // Give some time for the camera to fully initialize
-                cameraReadyTimer.start()
-            }
         }
 
         onErrorOccurred: function(error, errorString) {
             console.log("Camera error:", error, errorString)
-        }
-    }
-
-    // Timer to ensure camera is fully ready
-    Timer {
-        id: cameraReadyTimer
-        interval: 500
-        repeat: false
-        onTriggered: {
-            isCameraReady = true
-            console.log("Camera ready timer triggered - camera is now ready")
-        }
-    }
-
-    // Timer for initial camera setup
-    Timer {
-        id: initialCameraTimer
-        interval: 1000
-        repeat: false
-        onTriggered: {
-            if (camera_id_list.length > 0) {
-                console.log("Initial camera timer triggered - setting up first camera")
-                cameraBox.currentIndex = 0
-                changeCamera()
-            }
         }
     }
 
@@ -185,35 +150,30 @@ Window {
             anchors.fill: parent
             fillMode: VideoOutput.PreserveAspectFit
         }
-
-
     }
 
     Timer {
-            id: cameraChangeTimer
-            interval: 100
-            repeat: false
-            onTriggered: {
-                cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
-                camera.active = true
-                isCameraInitialized = true
-                console.log("Camera change completed, waiting for ready state")
-            }
+        id: cameraChangeTimer
+        interval: 100
+        repeat: false
+        onTriggered: {
+            console.log("Camera change timer triggered")
+            cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
+            camera.active = true
         }
+    }
 
-        function changeCamera() {
-            if (cameraBox.currentIndex >= 0) {
-                console.log("Changing camera to index:", cameraBox.currentIndex)
-                console.log("Camera ID:", camera_id_list[cameraBox.currentIndex])
+    function changeCamera() {
+        if (cameraBox.currentIndex >= 0) {
+            console.log("Changing camera to index:", cameraBox.currentIndex)
+            console.log("Camera ID:", camera_id_list[cameraBox.currentIndex])
 
-                // Reset states
-                isCameraReady = false
-                camera.active = false
+            camera.active = false
 
-                // Start the timer for delayed camera creation
-                cameraChangeTimer.start()
-            }
+            // Opóźnij utworzenie nowej kamery
+            cameraChangeTimer.start()
         }
+    }
 
     Connections {
         target: cameraUser
@@ -225,8 +185,9 @@ Window {
             console.log("Updated camera list - IDs:", JSON.stringify(camera_id_list))
             console.log("Names:", JSON.stringify(camera_name_list))
 
-            if (!isCameraInitialized && camera_id_list.length > 0) {
-                initialCameraTimer.start()
+            if (camera_id_list.length > 0 && cameraBox.currentIndex < 0) {
+                console.log("Setting initial camera")
+                cameraBox.currentIndex = 0
             }
         }
 
@@ -243,10 +204,7 @@ Window {
         }
 
         function onCameraChanged() {
-            console.log("Camera changed")
-            // Reset camera ready state when camera changes
-            isCameraReady = false
-            cameraReadyTimer.start()
+            console.log("Camera changed in C++")
         }
 
         function onPathChanged(path) {

@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
 
 
-    qmlRegisterUncreatableType<QCamera>("CustomComponents", 1, 0, "Camera", "Camera cannot be created in QML");
+    // qmlRegisterUncreatableType<QCamera>("CustomComponents", 1, 0, "Camera", "Camera cannot be created in QML");
 
 
     VideoRecorder* camera_app = new VideoRecorder(&engine);

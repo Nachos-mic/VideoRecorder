@@ -11,10 +11,8 @@ VideoRecorder::VideoRecorder(QObject *parent)
     , camera_list_size(0)
     , isRecording(false)
 {
-    // Create ImageCapture manager
     imageCaptureManager = new ImageCapture(this);
 
-    // Configure video capture manager
     connect(videoCaptureManager, &VideoCapture::videoCaptured,
             this, [this](const QString& path) {
                 qDebug() << "Video saved to:" << path;
@@ -27,7 +25,6 @@ VideoRecorder::VideoRecorder(QObject *parent)
                 updateRecordingStatus(false);
             });
 
-    // Start device polling timer
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VideoRecorder::getDeviceList);
     timer->start(500);
@@ -130,42 +127,37 @@ void VideoRecorder::setCamera(QCamera* camera) {
     if (this->camera_device != camera) {
         qDebug() << "Setting new camera";
 
-        // Clean up old camera
         if (this->camera_device) {
             this->camera_device->stop();
+            captureSession->setCamera(nullptr); // Dodane
             delete this->camera_device;
         }
 
         this->camera_device = camera;
 
         if (camera) {
-            captureSession->setCamera(camera);
-            videoCaptureManager->setCamera(camera);
-            imageCaptureManager->setCamera(camera);
-
             if (!camera->cameraDevice().videoFormats().isEmpty()) {
                 QCameraFormat format = camera->cameraDevice().videoFormats().first();
                 camera->setCameraFormat(format);
             }
 
-            QTimer::singleShot(100, this, [this, camera]() {
-                camera->start();
-                qDebug() << "Camera started with status:" << camera->isActive();
+            camera->start();
+            QThread::msleep(100);
 
-                if (!camera->isActive()) {
-                    QTimer::singleShot(500, this, [this, camera]() {
-                        if (camera && !camera->isActive()) {
-                            camera->stop();
-                            camera->start();
-                            qDebug() << "Camera restart attempt completed";
-                        }
-                    });
+            captureSession->setCamera(camera);
+            videoCaptureManager->setCamera(camera);
+            imageCaptureManager->setCamera(camera);
+
+            QTimer::singleShot(500, this, [this, camera]() {
+                if (camera && !camera->isActive()) {
+                    qDebug() << "Próba ponownego uruchomienia kamery...";
+                    camera->stop();
+                    QThread::msleep(100);
+                    camera->start();
                 }
             });
 
-            qDebug() << "Camera setup completed in VideoRecorder";
-        } else {
-            qDebug() << "Null camera provided";
+            qDebug() << "Konfiguracja kamery zakończona, stan aktywności:" << camera->isActive();
         }
 
         emit cameraChanged();

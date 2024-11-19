@@ -2,21 +2,23 @@
 #define VIDEOCAPTURE_H
 
 #include <QObject>
-#include <QMediaCaptureSession>
 #include <QMediaRecorder>
+#include <QMediaCaptureSession>
+#include <QAudioInput>
 #include <QCamera>
+#include <QMediaFormat>
+#include <QTimer>
 #include <QDateTime>
 #include <QDir>
-#include <QDebug>
 #include <QUrl>
-#include <QMediaFormat>
-#include <QAudioInput>
+#include <QDebug>
+#include <QCameraFormat>
 #include <QMediaDevices>
-#include <QAudioDevice>
-#include <QTimer>
 #include "utils.h"
+#include <QAudioDevice>
 
-class VideoCapture : public QObject {
+class VideoCapture : public QObject
+{
     Q_OBJECT
 
 public:
@@ -25,15 +27,13 @@ public:
 
     void setActiveSession(QMediaCaptureSession* session);
     void setCamera(QCamera* camera);
-    bool isRecording() const;
-
-public slots:
     void startCapturingVideo(QCamera* camera);
     void stopCapturingVideo();
+    bool isRecording() const;
 
 signals:
-    void videoCaptured(const QString& path);
     void recordingError(const QString& error);
+    void videoCaptured(const QString& path);
 
 private:
     void setupCameraForRecording();
@@ -43,7 +43,6 @@ private:
     QMediaRecorder* videoCapture;
     QAudioInput* audioInput;
     QCamera* currentCamera;
-    QString vid_path;
 };
 
 #endif // VIDEOCAPTURE_H

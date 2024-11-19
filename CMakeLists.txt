@@ -4,7 +4,7 @@ project(VideoRecorder_ALPHA VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick Multimedia Widgets)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Quick Multimedia Widgets MultimediaWidgets)
 
 qt_standard_project_setup()
 
@@ -42,7 +42,7 @@ set_target_properties(appVideoRecorder_ALPHA PROPERTIES
 )
 
 target_link_libraries(appVideoRecorder_ALPHA
-    PRIVATE Qt6::Quick Qt6::Multimedia Qt6::Widgets
+    PRIVATE Qt6::Quick Qt6::Multimedia Qt6::Widgets Qt6::MultimediaWidgets
 )
 
 include(GNUInstallDirs)

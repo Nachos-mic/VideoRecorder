@@ -1,53 +1,57 @@
 #ifndef VIDEORECORDER_H
 #define VIDEORECORDER_H
 
-#include <QtMultimedia>
+#include <QObject>
 #include <QCamera>
-#include <QCameraDevice>
-#include <QDebug>
+#include <QMediaCaptureSession>
+#include <QMediaDevices>
 #include <QTimer>
-#include <QMediaRecorder>
-#include <QtCore>
-#include "imagecapture.h"
 #include "videocapture.h"
+#include "imagecapture.h"
 
-class VideoRecorder : public QObject {
+class VideoRecorder : public QObject
+{
     Q_OBJECT
-    Q_PROPERTY(QCamera* camera_device READ getCamera WRITE setCamera NOTIFY cameraChanged)
-    Q_PROPERTY(QMediaCaptureSession* captureSession READ getCaptureSession CONSTANT)
+    Q_PROPERTY(QCamera* camera READ getCamera NOTIFY cameraChanged)
+    Q_PROPERTY(QMediaCaptureSession* captureSession READ getCaptureSession NOTIFY captureSessionChanged)
 
 public:
     explicit VideoRecorder(QObject *parent = nullptr);
     ~VideoRecorder();
-    ImageCapture* imageCaptureManager;
-    QList<QCameraDevice> getDeviceList();
-    QCamera* getCamera();
-    QMediaCaptureSession* getCaptureSession();
-    QList<QString> tab_id_list;
-    QStringList tab_camera_names_list;
-    Q_INVOKABLE void setCamera(QCamera* camera);
+
     Q_INVOKABLE void createCamera(const QString& deviceId);
     Q_INVOKABLE void startStopVideoRecording();
+    Q_INVOKABLE void captureFrame();
+    Q_INVOKABLE void setPath(const QString& path);
+    Q_INVOKABLE QList<QCameraDevice> getDeviceList();
+    Q_INVOKABLE void setQmlCaptureSession(QObject* session);
 
-private:
-    QCamera* camera_device;
-    QMediaCaptureSession* captureSession;
-    int camera_list_size = 0;
+    QCamera* getCamera();
+    QMediaCaptureSession* getCaptureSession();
+
+    ImageCapture* imageCaptureManager;
     VideoCapture* videoCaptureManager;
-    QString current_id;
-
-public slots:
-    void captureFrame();
-    void setPath(const QString& path);
 
 signals:
-    void deviceListChanged(QList<QString> ids, QStringList names);
     void cameraChanged();
-    void frameCapture(QCamera* camera);
-    void pathChanged(QString path);
-    void frameCaptured();
-    void videoCaptured(QString path);
+    void captureSessionChanged();
+    void deviceListChanged(const QVariantList& deviceList, const QStringList& namesList);
+    void videoCaptured(const QString& path);
     void videoRecordingStatusChanged(bool isRecording);
+    void frameCapture(QCamera* camera);
+    void pathChanged(const QString& path);
+
+private:
+    void setCamera(QCamera* camera);
+    void updateRecordingStatus(bool recording);
+
+    QCamera* camera_device;
+    QMediaCaptureSession* captureSession;
+    QString current_id;
+    int camera_list_size;
+    QVariantList tab_id_list;
+    QStringList tab_camera_names_list;
+    bool isRecording;
 };
 
 #endif // VIDEORECORDER_H

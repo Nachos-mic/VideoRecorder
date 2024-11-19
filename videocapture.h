@@ -12,8 +12,8 @@
 #include <QDir>
 #include <QUrl>
 #include <QDebug>
-#include <QCameraFormat>
 #include <QMediaDevices>
+#include <QThread>
 #include "utils.h"
 #include <QAudioDevice>
 
@@ -27,7 +27,7 @@ public:
 
     void setActiveSession(QMediaCaptureSession* session);
     void setCamera(QCamera* camera);
-    void startCapturingVideo(QCamera* camera);
+    bool startCapturingVideo(QCamera* camera);
     void stopCapturingVideo();
     bool isRecording() const;
 
@@ -36,7 +36,7 @@ signals:
     void videoCaptured(const QString& path);
 
 private:
-    void setupCameraForRecording();
+    bool setupCameraForRecording();
     QString generateFileName() const;
 
     QMediaCaptureSession* activeSession;
@@ -44,5 +44,4 @@ private:
     QAudioInput* audioInput;
     QCamera* currentCamera;
 };
-
 #endif // VIDEOCAPTURE_H

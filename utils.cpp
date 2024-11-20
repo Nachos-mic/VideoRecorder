@@ -1,6 +1,6 @@
 #include "utils.h"
 
-QString Utils::media_path =  QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+QString Utils::media_path = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/VideoRecorder";
 
 Utils::Utils() {}
 

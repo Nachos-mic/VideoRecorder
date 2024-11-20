@@ -63,7 +63,11 @@ Window {
             visible: recorder.recorderState !== MediaRecorder.RecordingState
             onClicked: {
                 videoOutputBox.border.color = "red"
+                console.log("Recording video into: " + cameraUser.getPath())
+                statusText.text = "Recording video into: " + cameraUser.getPath();
+                recorder.outputLocation = cameraUser.getPath() + "/" + "vid_" + new Date().toISOString().replace(/[:.]/g, "-") + ".mp4"
                 recorder.record()
+
             }
             anchors {
                 left: screenShotButton.right
@@ -79,6 +83,8 @@ Window {
             visible: recorder.recorderState === MediaRecorder.RecordingState
             onClicked:{
                 videoOutputBox.border.color = "black"
+                console.log("Saved video to: " + cameraUser.getPath())
+                statusText.text = "Saved video to: " +cameraUser.getPath();
                 recorder.stop()
             }
             anchors {
@@ -105,7 +111,7 @@ Window {
     FolderDialog {
         id: folderDialog
         title: "Select Directory"
-        currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
+        currentFolder: cameraUser.getPath()
         options: FolderDialog.ShowDirsOnly | FolderDialog.DontResolveSymlinks
 
         onAccepted: {
@@ -131,14 +137,13 @@ Window {
         audioInput: AudioInput {}
             recorder: MediaRecorder {
                 id: recorder
-                outputLocation: cameraUser.getPath() + "/" + "vid_" +
-                                new Date().toISOString().replace(/[:.]/g, "-") + ".mp4";
+                outputLocation: cameraUser.getPath()
         }
     }
 
     Rectangle {
         id: videoOutputBox
-        height: parent.height - options.height
+        height: parent.height*0.95 - options.height
         width: parent.width
         border.color: border_video_status
         border.width: 2
@@ -153,6 +158,16 @@ Window {
             anchors.fill: parent
             fillMode: VideoOutput.PreserveAspectFit
         }
+    }
+
+    Text {
+        id: statusText
+        anchors {
+            top: videoOutputBox.bottom
+            left: parent.left
+        }
+        text: ""
+
     }
 
 

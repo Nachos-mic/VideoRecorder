@@ -4,16 +4,18 @@
 #include <QObject>
 #include <QCamera>
 #include <QMediaCaptureSession>
+#include <QMediaRecorder>
 #include <QMediaDevices>
 #include <QTimer>
+#include <QThread>
 #include "videocapture.h"
 #include "imagecapture.h"
 
 class VideoRecorder : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QCamera* camera_device WRITE setCamera READ getCamera NOTIFY cameraChanged)
-    Q_PROPERTY(QMediaCaptureSession* captureSession READ getCaptureSession NOTIFY captureSessionChanged)
+    Q_PROPERTY(QCamera* previewCamera READ getPreviewCamera NOTIFY previewCameraChanged)
+    Q_PROPERTY(QCamera* camera_device READ getCamera NOTIFY cameraChanged)
 
 public:
     explicit VideoRecorder(QObject *parent = nullptr);
@@ -23,36 +25,39 @@ public:
     Q_INVOKABLE void startStopVideoRecording();
     Q_INVOKABLE void captureFrame();
     Q_INVOKABLE void setPath(const QString& path);
-    Q_INVOKABLE QList<QCameraDevice> getDeviceList();
-    Q_INVOKABLE void setQmlCaptureSession(QObject* session);
 
     QCamera* getCamera();
-    QMediaCaptureSession* getCaptureSession();
+    QCamera* getPreviewCamera();
+    QCamera* camera_device;
 
     ImageCapture* imageCaptureManager;
-    VideoCapture* videoCaptureManager;
+
+public slots:
+    void handleRecordingStateChanged(bool isRecording);
 
 signals:
     void cameraChanged();
-    void captureSessionChanged();
-    void deviceListChanged(const QVariantList& deviceList, const QStringList& namesList);
-    void videoCaptured(const QString& path);
-    void videoRecordingStatusChanged(bool isRecording);
+    void deviceListChanged(QVariantList id_list, QVariantList name_list);
     void frameCapture(QCamera* camera);
     void pathChanged(const QString& path);
+    void videoCaptured(const QString& path);
+    void videoRecordingStatusChanged(bool isRecording);
+    void previewCameraChanged();
 
 private:
     void setCamera(QCamera* camera);
-    void updateRecordingStatus(bool recording);
+    QList<QCameraDevice> getDeviceList();
+    void setupPreviewSession();
+    void cleanupPreviewSession();
 
-    QCamera* camera_device;
     QMediaCaptureSession* captureSession;
-    QString camera_device_id;
+    QMediaCaptureSession* previewSession;
+    VideoCapture* videoCaptureManager;
     QString current_id;
     int camera_list_size;
     QVariantList tab_id_list;
-    QStringList tab_camera_names_list;
-    bool isRecording;
+    QVariantList tab_camera_names_list;
+    QCamera* previewCamera;
 };
 
 #endif // VIDEORECORDER_H

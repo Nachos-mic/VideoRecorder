@@ -36,11 +36,7 @@ Window {
                 left: parent.left
                 top: parent.top
             }
-            onCurrentIndexChanged: {
-                if (currentIndex >= 0) {
-                    changeCamera()
-                }
-            }
+            onCurrentIndexChanged: changeCamera()
         }
 
         Button {
@@ -75,21 +71,6 @@ Window {
             }
         }
 
-        FolderDialog {
-            id: folderDialog
-            title: "Select Directory"
-            currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
-            options: FolderDialog.ShowDirsOnly | FolderDialog.DontResolveSymlinks
-
-            onAccepted: {
-                cameraUser.setPath(selectedFolder)
-            }
-
-            onRejected: {
-                console.log("Folder selection canceled")
-            }
-        }
-
         Button {
             id: setPathButton
             height: parent.height
@@ -105,32 +86,32 @@ Window {
         }
     }
 
-    PathPopUp {
-        id: pathSetPop
+    FolderDialog {
+        id: folderDialog
+        title: "Select Directory"
+        currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
+        options: FolderDialog.ShowDirsOnly | FolderDialog.DontResolveSymlinks
+
+        onAccepted: {
+            cameraUser.setPath(selectedFolder)
+        }
+        onRejected: {
+            console.log("Folder selection canceled")
+        }
     }
 
-    Camera {
-        id: camera
-        active: false
-
-        onActiveChanged: {
-            console.log("Camera active state changed:", active)
-        }
-
-        onErrorOccurred: function(error, errorString) {
-            console.log("Camera error:", error, errorString)
+    MediaDevices {
+        id: mediaDevices
+        onVideoInputsChanged: {
+            console.log("Changed device list")
+            changeCamera()
         }
     }
 
     CaptureSession {
         id: captureSession
-        camera: camera
+        camera: video_status ? cameraUser.previewCamera : cameraUser.camera_device
         videoOutput: videoOutput
-
-        Component.onCompleted: {
-            console.log("Setting up capture session")
-            cameraUser.setQmlCaptureSession(captureSession)
-        }
     }
 
     Rectangle {
@@ -152,49 +133,32 @@ Window {
         }
     }
 
-    Timer {
-        id: cameraChangeTimer
-        interval: 100
-        repeat: false
-        onTriggered: {
-            console.log("Camera change timer triggered")
-            cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
-            camera.active = true
-        }
-    }
 
     function changeCamera() {
         if (cameraBox.currentIndex >= 0) {
-            console.log("Changing camera to index:", cameraBox.currentIndex)
-            console.log("Camera ID:", camera_id_list[cameraBox.currentIndex])
-
-            camera.active = false
-
-            // Opóźnij utworzenie nowej kamery
-            cameraChangeTimer.start()
+            cameraUser.createCamera(camera_id_list[cameraBox.currentIndex])
+            console.log("changeCamera|||" + camera_id_list[cameraBox.currentIndex])
         }
     }
 
     Connections {
         target: cameraUser
-
         function onDeviceListChanged(id_list, name_list) {
-            camera_id_list = id_list
-            camera_name_list = name_list
+            camera_id_list = id_list.toString().split(',')
+            camera_name_list = name_list.toString().split(',')
 
-            console.log("Updated camera list - IDs:", JSON.stringify(camera_id_list))
-            console.log("Names:", JSON.stringify(camera_name_list))
+            console.log("Converted camera_id_list:", camera_id_list)
+            console.log("First camera ID:", camera_id_list[0])
 
-            if (camera_id_list.length > 0 && cameraBox.currentIndex < 0) {
-                console.log("Setting initial camera")
-                cameraBox.currentIndex = 0
+            if (camera_id_list.length > 0) {
+                changeCamera()
             }
         }
-
-        function onVideoCaptured(path) {
-            console.log("Video saved to:", path)
-            video_status = false
-            border_video_status = "black"
+        function onFrameCaptured(path) {
+            console.log("Frame captured:", path)
+        }
+        function onPathChanged(path){
+            console.log("Path changed to:", path)
         }
 
         function onVideoRecordingStatusChanged(isRecording) {
@@ -203,16 +167,16 @@ Window {
             border_video_status = isRecording ? "red" : "black"
         }
 
-        function onCameraChanged() {
-            console.log("Camera changed in C++")
-        }
-
-        function onPathChanged(path) {
-            console.log("Save path changed to:", path)
+        function onVideoCaptured(path) {
+            console.log("Video saved to:", path)
+            video_status = false
+            border_video_status = "black"
         }
     }
 
     Component.onCompleted: {
-        console.log("Window initialized")
+        if (mediaDevices.videoInputs.length > 0 && camera_id_list.length > 0) {
+            cameraUser.createCamera(camera_id_list[0])
+        }
     }
 }

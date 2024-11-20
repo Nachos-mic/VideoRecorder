@@ -66,6 +66,7 @@ bool VideoCapture::setupCameraForRecording()
     QString filePath = generateFileName() + ".mp4";
     videoCapture->setOutputLocation(QUrl::fromLocalFile(filePath));
 
+    // Upewnij się, że kamera jest aktywna
     if (!currentCamera->isActive()) {
         currentCamera->start();
         QThread::msleep(100);
@@ -83,10 +84,8 @@ bool VideoCapture::setupCameraForRecording()
         }
     }
 
-    // Use existing session
-    if (!activeSession->camera()) {
-        activeSession->setCamera(currentCamera);
-    }
+    // Zachowaj aktualną kamerę w sesji nagrywającej
+    activeSession->setCamera(currentCamera);
     activeSession->setRecorder(videoCapture);
 
     qDebug() << "Camera recording setup complete"
@@ -120,6 +119,11 @@ bool VideoCapture::startCapturingVideo(QCamera* camera)
         return false;
     }
 
+    if (!currentCamera->isActive()) {
+        currentCamera->start();
+        QThread::msleep(100); // Krótkie opóźnienie dla stabilizacji
+    }
+
     videoCapture->record();
     qDebug() << "Started recording to:" << videoCapture->outputLocation().toLocalFile();
     return true;
@@ -130,9 +134,15 @@ void VideoCapture::stopCapturingVideo()
     if (videoCapture->recorderState() == QMediaRecorder::RecordingState) {
         videoCapture->stop();
         qDebug() << "Stopping recording...";
-        QTimer::singleShot(500, this, [this]() {
-            if (activeSession) {
-                activeSession->setRecorder(nullptr);
+
+        QMediaCaptureSession* session = activeSession;
+
+        QTimer::singleShot(500, this, [this, session]() {
+            if (session) {
+                session->setRecorder(nullptr);
+                if (currentCamera && !currentCamera->isActive()) {
+                    currentCamera->start();
+                }
             }
         });
     }

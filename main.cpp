@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<QMediaCaptureSession>("CustomComponents", 1, 0, "CaptureSession");
     qmlRegisterUncreatableType<QCamera>("CustomComponents", 1, 0, "Camera", "Camera cannot be created in QML");
+    qmlRegisterType(QUrl("qrc:/VideoRecorder_ALPHA/CustomVideoRecorder.qml"), "CustomComponents", 1, 0, "CustomVideoRecorder");
 
     VideoRecorder* camera_app = new VideoRecorder(&engine);
     ImageCapture* imageCaptureManager = new ImageCapture(&engine);
@@ -23,12 +24,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("cameraUser", camera_app);
 
     const QUrl url(u"qrc:/VideoRecorder_ALPHA/Main.qml"_qs);
-    QObject::connect(
-        &engine,
-        &QQmlApplicationEngine::objectCreationFailed,
-        &app,
-        []() { QCoreApplication::exit(-1); },
-        Qt::QueuedConnection);
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
     engine.load(url);
 
     return app.exec();

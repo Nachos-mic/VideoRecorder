@@ -23,10 +23,11 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     RESOURCES
     SOURCES
     SOURCES imagecapture.h imagecapture.cpp
-    QML_FILES PathPopUp.qml
-    SOURCES videocapture.h videocapture.cpp
+    QML_FILES
+    SOURCES
     SOURCES utils.h utils.cpp
     SOURCES
+    QML_FILES
 
 )
 

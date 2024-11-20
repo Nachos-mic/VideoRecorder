@@ -6,16 +6,9 @@ VideoRecorder::VideoRecorder(QObject *parent)
     , camera_device(nullptr)
     , captureSession(new QMediaCaptureSession(this))
     , previewSession(new QMediaCaptureSession(this))
-    , videoCaptureManager(new VideoCapture(this))
     , previewCamera(nullptr)
+    , imageCaptureManager(nullptr)
 {
-    videoCaptureManager->setActiveSession(captureSession);
-
-    connect(videoCaptureManager, &VideoCapture::videoCaptured,
-            this, [this](const QString& path) {
-                emit videoCaptured(path);
-            });
-
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VideoRecorder::getDeviceList);
     timer->start(500);
@@ -64,7 +57,6 @@ void VideoRecorder::cleanupPreviewSession()
     }
 }
 
-
 QList<QCameraDevice> VideoRecorder::getDeviceList() {
     QList<QCameraDevice> cameras = QMediaDevices::videoInputs();
     if (cameras.size() != camera_list_size) {
@@ -83,7 +75,6 @@ QList<QCameraDevice> VideoRecorder::getDeviceList() {
 }
 
 void VideoRecorder::createCamera(const QString& deviceId) {
-
     current_id = deviceId;
     QCameraDevice device;
     for (const QCameraDevice &cameraDevice : QMediaDevices::videoInputs()) {
@@ -109,14 +100,10 @@ void VideoRecorder::setCamera(QCamera* camera)
         this->camera_device = camera;
 
         if (camera) {
-            // First set up the camera in the main capture session
             captureSession->setCamera(camera);
-            videoCaptureManager->setCamera(camera);
-
-            // Then set up image capture separately
-            imageCaptureManager->setCamera(camera);
-
-            // Start the camera
+            if (imageCaptureManager) {
+                imageCaptureManager->setCamera(camera);
+            }
             camera->start();
             qDebug() << "Camera started in VideoRecorder";
         }
@@ -125,83 +112,24 @@ void VideoRecorder::setCamera(QCamera* camera)
 }
 
 void VideoRecorder::captureFrame() {
-    if (!camera_device) {
-        qDebug() << "No camera available";
+    if (!camera_device || !imageCaptureManager) {
+        qDebug() << "No camera or image capture manager available";
         return;
     }
 
     QString currentCameraId = camera_device->cameraDevice().id();
-    bool wasRecording = videoCaptureManager->isRecording();
-
-    if (wasRecording) {
-        videoCaptureManager->stopCapturingVideo();
-        emit videoRecordingStatusChanged(false);
-    }
-
     qDebug() << "Capturing Frame";
-    imageCaptureManager->captureFrame(camera_device);
+    emit frameCapture(camera_device);
 
-    QTimer::singleShot(500, this, [this, currentCameraId, wasRecording]() {
+    QTimer::singleShot(500, this, [this, currentCameraId]() {
         if (camera_device) {
             camera_device->stop();
             delete camera_device;
             camera_device = nullptr;
         }
 
-        QCameraDevice device;
-        for (const QCameraDevice &cameraDevice : QMediaDevices::videoInputs()) {
-            if (cameraDevice.id() == currentCameraId) {
-                device = cameraDevice;
-                break;
-            }
-        }
-
-        if (!device.isNull()) {
-            QCamera* newCamera = new QCamera(device);
-            setCamera(newCamera);  // This will handle all the necessary setup
-
-            // If we were recording, resume after camera is recreated
-            if (wasRecording) {
-                QTimer::singleShot(500, this, [this]() {
-                    videoCaptureManager->startCapturingVideo(camera_device);
-                    emit videoRecordingStatusChanged(true);
-                });
-            }
-        } else {
-            qDebug() << "Failed to recreate camera with ID:" << currentCameraId;
-        }
+        createCamera(currentCameraId);
     });
-}
-
-void VideoRecorder::startStopVideoRecording()
-{
-    if (!camera_device) {
-        qDebug() << "No camera available";
-        return;
-    }
-
-    if (videoCaptureManager->isRecording()) {
-        qDebug() << "Stopping recording...";
-        videoCaptureManager->stopCapturingVideo();
-        emit videoRecordingStatusChanged(false);
-
-        QTimer::singleShot(100, this, [this]() {
-            QString currentId = camera_device->cameraDevice().id();
-            camera_device->stop();
-            createCamera(currentId);
-        });
-    } else {
-        qDebug() << "Starting recording...";
-        if (!camera_device->isActive()) {
-            camera_device->start();
-        }
-
-        QTimer::singleShot(100, this, [this]() {
-            if (videoCaptureManager->startCapturingVideo(camera_device)) {
-                emit videoRecordingStatusChanged(true);
-            }
-        });
-    }
 }
 
 QCamera* VideoRecorder::getPreviewCamera()
@@ -210,7 +138,6 @@ QCamera* VideoRecorder::getPreviewCamera()
 }
 
 QCamera* VideoRecorder::getCamera() {
-    qDebug() << "GET";
     return camera_device;
 }
 
@@ -218,7 +145,7 @@ void VideoRecorder::setPath(const QString& path) {
     emit pathChanged(path);
 }
 
-void VideoRecorder::handleRecordingStateChanged(bool isRecording) {
-    emit videoRecordingStatusChanged(isRecording);
-}
-
+QString VideoRecorder::getPath(){
+    qDebug() << "GETPATH";
+    return Utils::getMediaPath();
+};

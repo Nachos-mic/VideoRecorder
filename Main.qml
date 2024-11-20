@@ -55,19 +55,35 @@ Window {
             }
         }
 
-        Button {
-            id: recordVideoButton
+       Button {
+            id: startButton
             height: parent.height
             width: parent.width/6
+            text: "Record"
+            visible: recorder.recorderState !== MediaRecorder.RecordingState
+            onClicked: {
+                videoOutputBox.border.color = "red"
+                recorder.record()
+            }
             anchors {
                 left: screenShotButton.right
                 top: parent.top
             }
-            text: video_status ? "Stop Recording" : "Start Recording"
-            onClicked: {
-                if (cameraBox.currentIndex >= 0) {
-                    cameraUser.startStopVideoRecording()
-                }
+        }
+
+        Button {
+            id: stopButton
+            height: parent.height
+            width: parent.width/6
+            text: "Stop/Save"
+            visible: recorder.recorderState === MediaRecorder.RecordingState
+            onClicked:{
+                videoOutputBox.border.color = "black"
+                recorder.stop()
+            }
+            anchors {
+                left: screenShotButton.right
+                top: parent.top
             }
         }
 
@@ -76,7 +92,7 @@ Window {
             height: parent.height
             width: parent.width/6
             anchors {
-                left: recordVideoButton.right
+                left: stopButton.right
                 top: parent.top
             }
             text: "Set Path"
@@ -112,6 +128,12 @@ Window {
         id: captureSession
         camera: video_status ? cameraUser.previewCamera : cameraUser.camera_device
         videoOutput: videoOutput
+        audioInput: AudioInput {}
+            recorder: MediaRecorder {
+                id: recorder
+                outputLocation: cameraUser.getPath() + "/" + "vid_" +
+                                new Date().toISOString().replace(/[:.]/g, "-") + ".mp4";
+        }
     }
 
     Rectangle {
@@ -161,17 +183,6 @@ Window {
             console.log("Path changed to:", path)
         }
 
-        function onVideoRecordingStatusChanged(isRecording) {
-            console.log("Recording status changed:", isRecording)
-            video_status = isRecording
-            border_video_status = isRecording ? "red" : "black"
-        }
-
-        function onVideoCaptured(path) {
-            console.log("Video saved to:", path)
-            video_status = false
-            border_video_status = "black"
-        }
     }
 
     Component.onCompleted: {

@@ -26,6 +26,7 @@ class VideoRecorder : public QObject
     Q_PROPERTY(QString frame READ getFrame NOTIFY frameChanged)
     Q_PROPERTY(bool isRecording READ isRecording NOTIFY recordingStatusChanged)
 
+
 public:
     explicit VideoRecorder(QObject *parent = nullptr);
     ~VideoRecorder();
@@ -35,7 +36,7 @@ public:
     bool isRecording() const { return is_recording; }
 
     Q_INVOKABLE QString getCurrentPath() const { return Utils::getMediaPath(); }
-    Q_INVOKABLE void setCurrentPath(const QString &path) {Utils::setMediaPath(path);};
+    Q_INVOKABLE void setCurrentPath(const QString &path) {qDebug() << path; Utils::setMediaPath(path);};
 
 public slots:
     void setCamera(int index);

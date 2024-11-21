@@ -96,8 +96,25 @@ Window {
 
     FolderDialog {
         id: folderDialog
-        currentFolder: videoRecorder.getCurrentPath()
-        onAccepted: videoRecorder.setCurrentPath(selectedFolder)
+        title: "Select Directory"
+
+        options: FolderDialog.ShowDirsOnly | FolderDialog.DontResolveSymlinks
+
+        currentFolder: {
+            let path = videoRecorder.getCurrentPath();
+            return Qt.platform.os === "windows" ?
+                        "file:///" + path.replace(/\\/g, '/') :
+                        "file://" + path;
+        }
+
+        onAccepted: {
+            let path = selectedFolder.toString();
+            path = path.replace(/^file:\/{2,3}/, '');
+            videoRecorder.setCurrentPath(path);
+        }
+        onRejected: {
+            console.log("Folder selection canceled")
+        }
     }
 
     Component.onCompleted: {

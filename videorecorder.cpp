@@ -62,26 +62,31 @@ void VideoRecorder::updateFrame()
     }
 }
 
-void VideoRecorder::processAndEmitFrame(const QVideoFrame &video_frame)
+void VideoRecorder::processAndEmitFrame(QVideoFrame &video_frame)
 {
-    if (!video_frame.isValid()) return;
+    if (!video_frame.isValid())
+        return;
 
-    QVideoFrame cloned_frame = video_frame;
-    if (!cloned_frame.map(QVideoFrame::ReadOnly)) return;
+    if (!video_frame.map(QVideoFrame::ReadOnly))
+        return;
 
-    QImage image = cloned_frame.toImage();
-    cloned_frame.unmap();
+    QImage image = video_frame.toImage();
+    video_frame.unmap();
 
-    if (image.isNull()) return;
+    if (image.isNull())
+        return;
 
     QByteArray byteArray;
-    QBuffer buffer(&byteArray);
-    buffer.open(QIODevice::WriteOnly);
+    {
+        QBuffer buffer(&byteArray);
+        if (buffer.open(QIODevice::WriteOnly)) {
+            image.save(&buffer, "JPEG", 25);
+        }
+    }
 
-    image.save(&buffer, "JPEG", 20);
-    buffer.close();
+    QString new_frame = QString("data:image/jpeg;base64,%1")
+                            .arg(QString::fromLatin1(byteArray.toBase64()));
 
-    QString new_frame = QString("data:image/jpeg;base64,") + QString::fromLatin1(byteArray.toBase64());
     if (frame != new_frame) {
         frame = new_frame;
         emit frameChanged();

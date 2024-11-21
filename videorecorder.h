@@ -54,21 +54,24 @@ private slots:
 
 private:
     void updateCameraList();
-    void processAndEmitFrame(const QVideoFrame &frame);
+    void processAndEmitFrame(QVideoFrame &frame);
     bool configureMediaRecorder();
 
-    QCamera *ptr_camera;
     QMediaCaptureSession capture_session;
-    QVideoSink *ptr_video_sink;
-    QStringList tab_camera_list;
+
     QString frame;
-    QList<QCameraDevice> tab_camera_devices;
-    QTimer *ptr_frame_timer;
     QVideoFrame last_frame;
-    QFile* ptr_video_file;
-    bool is_recording;
 
     QMediaRecorder* ptr_media_recorder;
+    QCamera *ptr_camera;
+    QVideoSink *ptr_video_sink;
+    QTimer *ptr_frame_timer;
+    QFile* ptr_video_file;
+
+    QStringList tab_camera_list;
+    QList<QCameraDevice> tab_camera_devices;
+
+    bool is_recording;
 };
 
 #endif // VIDEORECORDER_H

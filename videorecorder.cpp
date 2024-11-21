@@ -84,8 +84,7 @@ void VideoRecorder::processAndEmitFrame(QVideoFrame &video_frame)
         }
     }
 
-    QString new_frame = QString("data:image/jpeg;base64,%1")
-                            .arg(QString::fromLatin1(byteArray.toBase64()));
+    QString new_frame = QString("data:image/jpeg;base64,%1").arg(QString::fromLatin1(byteArray.toBase64()));
 
     if (frame != new_frame) {
         frame = new_frame;

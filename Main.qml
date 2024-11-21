@@ -7,7 +7,7 @@ Window {
     width: 640
     height: 480
     visible: true
-    title: "VideoRecorder"
+    title: "Camera Recorder v0.5"
 
     VideoRecorder {
         id: videoRecorder

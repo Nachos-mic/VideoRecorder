@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
-
     qmlRegisterType<VideoRecorder>("VideoRecorder", 1, 0, "VideoRecorder");
 
     const QUrl url(u"qrc:/VideoRecorder_ALPHA/Main.qml"_qs);

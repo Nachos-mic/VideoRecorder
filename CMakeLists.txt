@@ -29,6 +29,7 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     SOURCES
     QML_FILES
     SOURCES
+    SOURCES
 
 )
 

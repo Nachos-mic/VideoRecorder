@@ -32,7 +32,7 @@ Window {
                 left: parent.left
                 top: parent.top
             }
-            onActivated: videoRecorder.setCamera(currentIndex)
+            onCurrentIndexChanged: videoRecorder.setCamera(currentIndex)
         }
 
         Button {
@@ -44,7 +44,23 @@ Window {
                 top: parent.top
             }
             text: "Capture frame"
-            onClicked: videoRecorder.captureFrame()
+            onClicked: {
+                if (cameraBox.currentIndex >= 0) {
+                    videoRecorder.captureFrame()
+                }
+            }
+        }
+
+        Button {
+            id: recordButton
+            height: parent.height
+            width: parent.width/6
+            anchors {
+                left: screenShotButton.right
+                top: parent.top
+            }
+            text: videoRecorder.isRecording ? "Stop Recording" : "Start Recording"
+            onClicked: videoRecorder.startStopRecording()
         }
 
         Button {
@@ -52,7 +68,7 @@ Window {
             height: parent.height
             width: parent.width/6
             anchors {
-                left: screenShotButton.right
+                left: recordButton.right
                 top: parent.top
             }
             text: "Set Path"
@@ -64,7 +80,6 @@ Window {
         id: videoOutputBox
         height: parent.height - options.height
         width: parent.width
-        border.color: "black"
         anchors {
             top: options.bottom
             left: parent.left
@@ -72,6 +87,7 @@ Window {
 
         Image {
             anchors.fill: parent
+            asynchronous: true
             fillMode: Image.PreserveAspectFit
             source: videoRecorder.frame
             cache: false
@@ -80,7 +96,13 @@ Window {
 
     FolderDialog {
         id: folderDialog
-        currentFolder: videoRecorder.currentPath
+        currentFolder: videoRecorder.getCurrentPath()
         onAccepted: videoRecorder.setCurrentPath(selectedFolder)
+    }
+
+    Component.onCompleted: {
+        if (videoRecorder.cameraList.length > 0) {
+            videoRecorder.setCamera(0)
+        }
     }
 }

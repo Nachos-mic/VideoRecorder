@@ -1,70 +1,100 @@
 #include "videorecorder.h"
-#include <QBuffer>
 
 VideoRecorder::VideoRecorder(QObject *parent)
     : QObject(parent)
-    , m_camera(nullptr)
-    , m_videoSink(new QVideoSink(this))
-    , m_currentPath(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/VideoRecorder")
+    , ptr_camera(nullptr)
+    , ptr_video_sink(new QVideoSink(this))
+    , ptr_frame_timer(new QTimer(this))
+    , ptr_media_recorder(new QMediaRecorder(this))
+    , is_recording(false)
 {
-    connect(m_videoSink, &QVideoSink::videoFrameChanged,
+    connect(ptr_media_recorder, &QMediaRecorder::errorOccurred,
+            this, [this](QMediaRecorder::Error error, const QString &errorString) {
+                qDebug() << "Recording error:" << error << errorString;
+            });
+
+    connect(ptr_media_recorder, &QMediaRecorder::recorderStateChanged,
+            this, [this](QMediaRecorder::RecorderState state) {
+                qDebug() << "Recorder state changed to:" << state;
+            });
+
+    connect(ptr_video_sink, &QVideoSink::videoFrameChanged,
             this, &VideoRecorder::handleFrameChanged);
 
-    m_captureSession.setVideoSink(m_videoSink);
+    ptr_frame_timer->setInterval(33);
+    connect(ptr_frame_timer, &QTimer::timeout, this, &VideoRecorder::updateFrame);
+    ptr_frame_timer->start();
+
+    capture_session.setVideoSink(ptr_video_sink);
     updateCameraList();
 
-    if (!m_cameraDevices.isEmpty()) {
-        m_camera = new QCamera(m_cameraDevices.first(), this);
-        m_captureSession.setCamera(m_camera);
-        m_camera->start();
+    if (!tab_camera_devices.isEmpty()) {
+        ptr_camera = new QCamera(tab_camera_devices.first(), this);
+        capture_session.setCamera(ptr_camera);
+        ptr_camera->start();
     }
+    configureMediaRecorder();
 }
 
 VideoRecorder::~VideoRecorder()
 {
-    if (m_camera) {
-        m_camera->stop();
-        delete m_camera;
+    if (ptr_camera) {
+        ptr_camera->stop();
+        delete ptr_camera;
     }
+    ptr_frame_timer->stop();
 }
 
 QString VideoRecorder::getFrame() const
 {
-    return m_frame;
+    return frame;
 }
 
 void VideoRecorder::handleFrameChanged(const QVideoFrame &frame)
 {
-    if (!frame.isValid()) return;
+    last_frame = frame;
+}
 
-    QVideoFrame clonedFrame = frame;
-    if (!clonedFrame.map(QVideoFrame::ReadOnly)) return;
+void VideoRecorder::updateFrame()
+{
+    if (last_frame.isValid()) {
+        processAndEmitFrame(last_frame);
+    }
+}
 
-    QImage image = clonedFrame.toImage();
-    clonedFrame.unmap();
+void VideoRecorder::processAndEmitFrame(const QVideoFrame &video_frame)
+{
+    if (!video_frame.isValid()) return;
 
-    if (!image.isNull()) {
-        QByteArray byteArray;
-        QBuffer buffer(&byteArray);
-        buffer.open(QIODevice::WriteOnly);
-        image.save(&buffer, "PNG");
-        buffer.close();
+    QVideoFrame cloned_frame = video_frame;
+    if (!cloned_frame.map(QVideoFrame::ReadOnly)) return;
 
-        QString base64 = QString("data:image/png;base64,") + QString::fromLatin1(byteArray.toBase64());
-        if (m_frame != base64) {
-            m_frame = base64;
-            emit frameChanged();
-        }
+    QImage image = cloned_frame.toImage();
+    cloned_frame.unmap();
+
+    if (image.isNull()) return;
+
+    QByteArray byteArray;
+    QBuffer buffer(&byteArray);
+    buffer.open(QIODevice::WriteOnly);
+
+    image.save(&buffer, "JPEG", 20);
+    buffer.close();
+
+    QString new_frame = QString("data:image/jpeg;base64,") + QString::fromLatin1(byteArray.toBase64());
+    if (frame != new_frame) {
+        frame = new_frame;
+        emit frameChanged();
     }
 }
 
 void VideoRecorder::updateCameraList()
 {
-    m_cameraDevices = QMediaDevices::videoInputs();
-    m_cameraList.clear();
+    tab_camera_devices = QMediaDevices::videoInputs();
+    tab_camera_list.clear();
 
-    for (const QCameraDevice &device : m_cameraDevices) {
-        m_cameraList.append(device.description());
+    for (const QCameraDevice &device : tab_camera_devices) {
+        tab_camera_list.append(device.description());
     }
 
     emit cameraListChanged();
@@ -72,33 +102,34 @@ void VideoRecorder::updateCameraList()
 
 void VideoRecorder::setCamera(int index)
 {
-    if (index >= 0 && index < m_cameraDevices.size()) {
-        if (m_camera) {
-            m_camera->stop();
-            delete m_camera;
+    if (index >= 0 && index < tab_camera_devices.size()) {
+        if (ptr_camera) {
+            ptr_camera->stop();
+            delete ptr_camera;
         }
 
-        m_camera = new QCamera(m_cameraDevices.at(index), this);
-        m_captureSession.setCamera(m_camera);
-        m_camera->start();
+        ptr_camera = new QCamera(tab_camera_devices.at(index), this);
+        capture_session.setCamera(ptr_camera);
+
+        QTimer::singleShot(100, this, [this]() {
+            if (ptr_camera) {
+                ptr_camera->start();
+            }
+        });
+
+        ptr_frame_timer->stop();
+        QTimer::singleShot(200, this, [this]() {
+            ptr_frame_timer->start();
+        });
     }
 }
 
-void VideoRecorder::setCurrentPath(const QString &path)
-{
-    if (m_currentPath != path) {
-        m_currentPath = path;
-        emit currentPathChanged();
-    }
-}
 
 void VideoRecorder::captureFrame()
 {
-    if (!m_videoSink) return;
+    if (!last_frame.isValid()) return;
 
-    QVideoFrame frame = m_videoSink->videoFrame();
-    if (!frame.isValid()) return;
-
+    QVideoFrame frame = last_frame;
     if (!frame.map(QVideoFrame::ReadOnly)) return;
 
     QImage image = frame.toImage();
@@ -107,11 +138,41 @@ void VideoRecorder::captureFrame()
     if (image.isNull()) return;
 
     QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-    QString filename = m_currentPath + "/capture_" + timestamp + ".png";
+    QString filename = Utils::getMediaPath() + "/captured_img_" + timestamp + ".png";
 
-    QDir().mkpath(m_currentPath);
+    QDir().mkpath(Utils::getMediaPath());
 
     if (image.save(filename)) {
         qDebug() << "Frame saved to:" << filename;
+    }
+}
+
+bool VideoRecorder::configureMediaRecorder()
+{
+    QMediaFormat format;
+    format.setFileFormat(QMediaFormat::MPEG4);
+    format.setVideoCodec(QMediaFormat::VideoCodec::H264);
+
+    ptr_media_recorder->setMediaFormat(format);
+    ptr_media_recorder->setQuality(QMediaRecorder::HighQuality);
+    capture_session.setRecorder(ptr_media_recorder);
+
+    return true;
+}
+
+void VideoRecorder::startStopRecording()
+{
+    if (is_recording) {
+        ptr_media_recorder->stop();
+        is_recording = false;
+        emit recordingStatusChanged(false);
+    } else {
+        QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+        QString filename = Utils::getMediaPath() + "/video_" + timestamp + ".mp4";
+        ptr_media_recorder->setOutputLocation(QUrl::fromLocalFile(filename));
+
+        ptr_media_recorder->record();
+        is_recording = true;
+        emit recordingStatusChanged(true);
     }
 }

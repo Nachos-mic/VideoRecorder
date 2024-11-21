@@ -19,15 +19,16 @@ qt_add_qml_module(appVideoRecorder_ALPHA
     SOURCES
     SOURCES
     SOURCES videorecorder.h videorecorder.cpp
-    SOURCES camerarecorder.h camerarecorder.cpp
+    SOURCES
     RESOURCES
     SOURCES
-    SOURCES imagecapture.h imagecapture.cpp
+    SOURCES
     QML_FILES
     SOURCES
     SOURCES utils.h utils.cpp
     SOURCES
     QML_FILES
+    SOURCES
 
 )
 

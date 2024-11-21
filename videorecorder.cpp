@@ -1,151 +1,117 @@
 #include "videorecorder.h"
-#include <QMediaDevices>
+#include <QBuffer>
 
 VideoRecorder::VideoRecorder(QObject *parent)
     : QObject(parent)
-    , camera_device(nullptr)
-    , captureSession(new QMediaCaptureSession(this))
-    , previewSession(new QMediaCaptureSession(this))
-    , previewCamera(nullptr)
-    , imageCaptureManager(nullptr)
+    , m_camera(nullptr)
+    , m_videoSink(new QVideoSink(this))
+    , m_currentPath(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) + "/VideoRecorder")
 {
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &VideoRecorder::getDeviceList);
-    timer->start(500);
+    connect(m_videoSink, &QVideoSink::videoFrameChanged,
+            this, &VideoRecorder::handleFrameChanged);
+
+    m_captureSession.setVideoSink(m_videoSink);
+    updateCameraList();
+
+    if (!m_cameraDevices.isEmpty()) {
+        m_camera = new QCamera(m_cameraDevices.first(), this);
+        m_captureSession.setCamera(m_camera);
+        m_camera->start();
+    }
 }
 
 VideoRecorder::~VideoRecorder()
 {
-    cleanupPreviewSession();
-    if (camera_device) {
-        camera_device->stop();
-        delete camera_device;
+    if (m_camera) {
+        m_camera->stop();
+        delete m_camera;
     }
 }
 
-void VideoRecorder::setupPreviewSession()
+QString VideoRecorder::getFrame() const
 {
-    if (!current_id.isEmpty()) {
-        QCameraDevice device;
-        for (const QCameraDevice &cameraDevice : QMediaDevices::videoInputs()) {
-            if (cameraDevice.id() == current_id) {
-                device = cameraDevice;
-                break;
-            }
-        }
-
-        if (!device.isNull()) {
-            if (previewCamera) {
-                cleanupPreviewSession();
-            }
-            previewCamera = new QCamera(device);
-            previewSession->setCamera(previewCamera);
-            previewCamera->start();
-            emit previewCameraChanged();
-        }
-    }
+    return m_frame;
 }
 
-void VideoRecorder::cleanupPreviewSession()
+void VideoRecorder::handleFrameChanged(const QVideoFrame &frame)
 {
-    if (previewCamera) {
-        previewCamera->stop();
-        previewSession->setCamera(nullptr);
-        delete previewCamera;
-        previewCamera = nullptr;
-        emit previewCameraChanged();
-    }
-}
+    if (!frame.isValid()) return;
 
-QList<QCameraDevice> VideoRecorder::getDeviceList() {
-    QList<QCameraDevice> cameras = QMediaDevices::videoInputs();
-    if (cameras.size() != camera_list_size) {
-        camera_list_size = cameras.size();
-        tab_id_list.clear();
-        tab_camera_names_list.clear();
+    QVideoFrame clonedFrame = frame;
+    if (!clonedFrame.map(QVideoFrame::ReadOnly)) return;
 
-        for (const QCameraDevice &cameraDevice : cameras) {
-            tab_id_list.append(cameraDevice.id());
-            tab_camera_names_list.append(cameraDevice.description());
-        }
+    QImage image = clonedFrame.toImage();
+    clonedFrame.unmap();
 
-        emit deviceListChanged(tab_id_list, tab_camera_names_list);
-    }
-    return cameras;
-}
+    if (!image.isNull()) {
+        QByteArray byteArray;
+        QBuffer buffer(&byteArray);
+        buffer.open(QIODevice::WriteOnly);
+        image.save(&buffer, "PNG");
+        buffer.close();
 
-void VideoRecorder::createCamera(const QString& deviceId) {
-    current_id = deviceId;
-    QCameraDevice device;
-    for (const QCameraDevice &cameraDevice : QMediaDevices::videoInputs()) {
-        if (cameraDevice.id() == deviceId) {
-            device = cameraDevice;
-            break;
+        QString base64 = QString("data:image/png;base64,") + QString::fromLatin1(byteArray.toBase64());
+        if (m_frame != base64) {
+            m_frame = base64;
+            emit frameChanged();
         }
     }
-
-    if (!device.isNull()) {
-        setCamera(new QCamera(device));
-    }
 }
 
-void VideoRecorder::setCamera(QCamera* camera)
+void VideoRecorder::updateCameraList()
 {
-    if (this->camera_device != camera) {
-        if (this->camera_device) {
-            this->camera_device->stop();
-            delete this->camera_device;
-        }
+    m_cameraDevices = QMediaDevices::videoInputs();
+    m_cameraList.clear();
 
-        this->camera_device = camera;
-
-        if (camera) {
-            captureSession->setCamera(camera);
-            if (imageCaptureManager) {
-                imageCaptureManager->setCamera(camera);
-            }
-            camera->start();
-            qDebug() << "Camera started in VideoRecorder";
-        }
-        emit cameraChanged();
-    }
-}
-
-void VideoRecorder::captureFrame() {
-    if (!camera_device || !imageCaptureManager) {
-        qDebug() << "No camera or image capture manager available";
-        return;
+    for (const QCameraDevice &device : m_cameraDevices) {
+        m_cameraList.append(device.description());
     }
 
-    QString currentCameraId = camera_device->cameraDevice().id();
-    qDebug() << "Capturing Frame";
-    emit frameCapture(camera_device);
-
-    QTimer::singleShot(500, this, [this, currentCameraId]() {
-        if (camera_device) {
-            camera_device->stop();
-            delete camera_device;
-            camera_device = nullptr;
-        }
-
-        createCamera(currentCameraId);
-    });
+    emit cameraListChanged();
 }
 
-QCamera* VideoRecorder::getPreviewCamera()
+void VideoRecorder::setCamera(int index)
 {
-    return previewCamera;
+    if (index >= 0 && index < m_cameraDevices.size()) {
+        if (m_camera) {
+            m_camera->stop();
+            delete m_camera;
+        }
+
+        m_camera = new QCamera(m_cameraDevices.at(index), this);
+        m_captureSession.setCamera(m_camera);
+        m_camera->start();
+    }
 }
 
-QCamera* VideoRecorder::getCamera() {
-    return camera_device;
+void VideoRecorder::setCurrentPath(const QString &path)
+{
+    if (m_currentPath != path) {
+        m_currentPath = path;
+        emit currentPathChanged();
+    }
 }
 
-void VideoRecorder::setPath(const QString& path) {
-    emit pathChanged(path);
-}
+void VideoRecorder::captureFrame()
+{
+    if (!m_videoSink) return;
 
-QString VideoRecorder::getPath(){
-    qDebug() << "GETPATH";
-    return Utils::getMediaPath();
-};
+    QVideoFrame frame = m_videoSink->videoFrame();
+    if (!frame.isValid()) return;
+
+    if (!frame.map(QVideoFrame::ReadOnly)) return;
+
+    QImage image = frame.toImage();
+    frame.unmap();
+
+    if (image.isNull()) return;
+
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+    QString filename = m_currentPath + "/capture_" + timestamp + ".png";
+
+    QDir().mkpath(m_currentPath);
+
+    if (image.save(filename)) {
+        qDebug() << "Frame saved to:" << filename;
+    }
+}

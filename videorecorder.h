@@ -1,3 +1,4 @@
+// videorecorder.h
 #ifndef VIDEORECORDER_H
 #define VIDEORECORDER_H
 
@@ -5,49 +6,50 @@
 #include <QCamera>
 #include <QMediaCaptureSession>
 #include <QMediaDevices>
-#include <QTimer>
-#include "imagecapture.h"
+#include <QVideoSink>
+#include <QVideoFrame>
+#include <QImage>
+#include <QDateTime>
+#include <QDir>
+#include <QStandardPaths>
 
 class VideoRecorder : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QCamera* camera_device READ getCamera NOTIFY cameraChanged)
-    Q_PROPERTY(QCamera* previewCamera READ getPreviewCamera NOTIFY previewCameraChanged)
+    Q_PROPERTY(QStringList cameraList READ getCameraList NOTIFY cameraListChanged)
+    Q_PROPERTY(QString currentPath READ getCurrentPath WRITE setCurrentPath NOTIFY currentPathChanged)
+    Q_PROPERTY(QString frame READ getFrame NOTIFY frameChanged)
 
 public:
     explicit VideoRecorder(QObject *parent = nullptr);
     ~VideoRecorder();
 
-    ImageCapture* imageCaptureManager;
-    QMediaCaptureSession* captureSession;
-    QCamera* camera_device;
-    QCamera* previewCamera;
+    QStringList getCameraList() const { return m_cameraList; }
+    QString getCurrentPath() const { return m_currentPath; }
+    QString getFrame() const;
 
-    Q_INVOKABLE void createCamera(const QString& deviceId);
-    Q_INVOKABLE void captureFrame();
-    Q_INVOKABLE void setPath(const QString& path);
-    Q_INVOKABLE QString getPath();
-    Q_INVOKABLE QCamera* getPreviewCamera();
-    Q_INVOKABLE QCamera* getCamera();
+public slots:
+    void setCurrentPath(const QString &path);
+    void setCamera(int index);
+    void captureFrame();
 
 signals:
-    void deviceListChanged(QStringList id_list, QStringList name_list);
-    void cameraChanged();
-    void previewCameraChanged();
-    void frameCapture(QCamera* camera);
-    void pathChanged(const QString& path);
+    void cameraListChanged();
+    void currentPathChanged();
+    void frameChanged();
+
+private slots:
+    void handleFrameChanged(const QVideoFrame &frame);
 
 private:
-    QMediaCaptureSession* previewSession;
-    QString current_id;
-    int camera_list_size = 0;
-    QStringList tab_id_list;
-    QStringList tab_camera_names_list;
-
-    void setCamera(QCamera* camera);
-    QList<QCameraDevice> getDeviceList();
-    void setupPreviewSession();
-    void cleanupPreviewSession();
+    void updateCameraList();
+    QCamera *m_camera;
+    QMediaCaptureSession m_captureSession;
+    QVideoSink *m_videoSink;
+    QStringList m_cameraList;
+    QString m_currentPath;
+    QString m_frame;
+    QList<QCameraDevice> m_cameraDevices;
 };
 
-#endif // VIDEORECORDER_H
+#endif

@@ -4,7 +4,7 @@ VideoRecorder is my engineering thesis application for recording/filtering video
 
 ---
 
-##About
+About
 
 VideoRecorder is a desktop application written in C++ for recording and filtering video-streams. It uses 3x3 convolution mask for filtering.
 
@@ -26,7 +26,7 @@ Main functionalities of this application consist of:
 
 ---
 
-##Used technologies/tools
+Used technologies/tools
 
 * [C++17](https://en.cppreference.com/w/cpp/17) 
 * [CMake](https://cmake.org/) (v3.5+) 
